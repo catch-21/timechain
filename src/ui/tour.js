@@ -413,7 +413,7 @@ function tourCardHtml(){
   return `${s.center?`<div class="tour-dim"></div>`:""}<aside class="tour-card${s.center?" tour-center":""}" role="dialog" aria-live="polite" aria-label="Tutorial" data-step="${s.id}">
     <div class="tour-bar"><i style="width:${pct}%"></i></div>
     <div class="tour-kicker">Step ${n+1} of ${total} · ${s.chapter}</div><ol class="tour-dots" aria-hidden="true">${dots}</ol>
-    ${t.lastDone&&!first?`<div class="tour-last">✓ ${t.lastDone}</div>`:""}${notice}<h3>${s.title}</h3><p>${s.body}</p>${doing}${clock}
+    ${t.lastDone&&!first?`<div class="tour-last">✓ ${t.lastDone}</div>`:""}${notice}<h3>${s.title}</h3>${s.center?`<p>${s.body}</p>`:""}${doing}${clock}${!s.center?`<details class="setup-reference"><summary>Why this step matters</summary><p>${s.body}</p></details>`:""}
     <div class="tour-actions">${actions}</div></aside>`;
 }
 function tourSignature(){

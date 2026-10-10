@@ -450,7 +450,7 @@ assert(inline.includes('if(from==="cold")return beginColdSpend(to,gross,fee,{fra
   "Leaving cold storage completes instantly again");
 // THE BILL IS A CUSTODY EVENT. The settlement decision has to say how far away the reserve is and
 // offer to fetch it, because the clock is stopped and a signing is measured in days of clock.
-assert(inline.includes('activeTab==="dashboard"||activeTab==="treasury"?"":sectionPulse()') && inline.includes("${treasuryStrip()}${treasurySectionNav()}${sectionPulse()}${sections[treasurySection()]()}"),
+assert(inline.includes('activeTab==="dashboard"||activeTab==="treasury"?"":sectionPulse()') && inline.includes('${treasuryStrip()}${treasurySectionNav()}${treasurySection()==="finance"?"":sectionPulse()}${sections[treasurySection()]()}'),
   "The Treasury's orientation card is back above the position strip, or is drawn twice: it belongs under the section bar, once");
 assert(/if\(a==="begin"\)\{[^\n]*required:true,resumeSpeed:/.test(inline) && !/if\(a==="begin"\)\{[^\n]*skipWalletSetup\(\)/.test(inline),
   "Beginning a run skips the first-wallet ceremony again: the player never generates a key, and nothing says why there is somewhere to be paid");
@@ -2270,13 +2270,26 @@ assert(/@media\(max-width:800px\)\{\.topbar-cash\{[^}]*\}\.topbar-cash \.cash-fu
   const { loadEngine, makeEval } = await import("./engine-harness.mjs");
   const sb = loadEngine(), ev = makeEval(sb);
   vm.runInContext(await readFile(new URL("src/ui/presentation.js", root), "utf8"), sb);
+  vm.runInContext(await readFile(new URL("src/ui/enhance/operations.js", root), "utf8"), sb);
+  vm.runInContext(await readFile(new URL("src/ui/enhance/custody-order.js", root), "utf8"), sb);
   ev("state=initialState();state.cash=0");
+  const bill = ev("settlementForecastVisual()");
+  const detailAt = bill.indexOf('<details');
+  for (const id of ["bill-amount", "bill-due", "bill-cash-after", "bill-next-action"])
+    assert(bill.indexOf(`id="${id}"`) >= 0 && bill.indexOf(`id="${id}"`) < detailAt, `${id} is buried in bill details`);
+  assert(ev("billNextAction(settlementForecast())").includes('data-value="mine"'), "First-bill shortfall has no available recovery action");
+  ev("state.cash=100000");
+  assert(ev("billNextAction(settlementForecast())").includes('data-value="dashboard"'), "Covered bill has no continuation action");
+  const setup = ev("coldSetupCard()");
+  assert(setup.indexOf('class="current"') < setup.indexOf('<details') && setup.includes('<summary>Full setup checklist'), "The current setup task no longer leads its collapsed reference");
+  ev("state.cash=0");
   const early = ev("settlementOutlookVisual()");
   assert(early.includes("No grace before trading opens") && !early.includes("Up to one month's grace"), "Pre-market bill guidance promises unavailable grace");
   assert(early.includes('data-value="mine"') && !early.includes('data-value="market"'), "A pre-market shortfall sends the player to a market that does not exist");
   assert(!early.includes('<strong>No market</strong>'), "The market status hides the actual cash shortfall");
   ev("state.time=MARKET+DAY");
   const trading = ev("settlementOutlookVisual()");
+  assert(ev("billNextAction(settlementForecast())").includes('data-value="market"'), "Market-era shortfall has no cash recovery action");
   assert(trading.includes("Up to one month's grace") && trading.includes('data-value="market"'), "After trading opens, bill guidance has lost its market recovery route");
 }
 console.log("UI contracts passed: Mine purchases, difficulty and mobile speed controls, transaction precision, enhancement guards, mempool containment, fleet servicing, repair labour, overdrive, Method coverage, speed-resume safety, the exchange trade-ticket flow, network-hash display parity, bad-event impact effects, timed facility-upgrade risk, mining-floor connectivity/power status, the 100-year procedural sandbox continuation, pool fee display, pool shutdown fail-over, the custody transfer slider, Lightning gating, live market pricing, mempool realism, disabled-control tooltips, the single-venue market redesign, Mine-tab scroll stability, full-refurbishment puzzle consistency, the proactive settlement warning, connectivity ping, the unified incoming-fleet pipeline, proportional fleet-health severity colors, rival operators, milestone moments, the end-of-run recap, cross-run career persistence, the dice-entropy wallet-setup ceremony, the era-accurate wallet-software upgrade path, the resetGame() operator-era crash fix, the real mailing-list learning items, the Dashboard build-queue card, hands-on self-servicing before technicians are hired, the fault-clearing/offline-threshold repair fix, the non-blocking faucet popup, tiered spare parts, the historically-grounded custody/region exposure warnings, free self-serviced labour with real self-damage risk, the four hardware self-help skills, staff dismissal the operator XP/level system, dated pool payout schemes, one drawing per machine, and scroll-anchored, frame-aligned repaints");

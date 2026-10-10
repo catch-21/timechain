@@ -79,13 +79,13 @@ function treasuryStrip(){
   const runway=reach.liquidRunwayDays===null?"":`${reach.liquidRunwayDays>=100?"100+":Math.round(reach.liquidRunwayDays)} days of bills`;
   const reserve=reach.cold>0?`${reach.reachDays} day${reach.reachDays===1?"":"s"} away · ${fmtNum(reach.coins)} coin${reach.coins===1?"":"s"}`:"nothing in cold storage";
   const moving=[reach.inFlight>0?`${fmtBtc(reach.inFlight)} on its way`:"",loan?`${fmtBtc(securedPledgedBtc())} pledged`:""].filter(Boolean).join(" · ");
-  return `<section class="card treasury-strip" aria-label="Treasury position"><div class="metric-row">
+  return `${treasurySection()==="finance"?'<details class="treasury-position-reference"><summary>Cash, wallets and reserve overview</summary>':""}<section class="card treasury-strip" aria-label="Treasury position"><div class="metric-row">
     <div class="metric"><div class="label">Spendable</div><strong>${fmtUsd(state.cash)}</strong><small>${runway||"cash"}${state.debt>0?` · ${fmtUsd(state.debt)} overdue`:""}</small></div>
     <div class="metric"><div class="label">Hot wallet</div><strong>${fmtBtc(reach.hot)}</strong><small>${state.time>=MARKET?"sellable today":"no market until July 2010"}${typeof hotKeyUnbacked==="function"&&hotKeyUnbacked()?" · key not backed up":""}</small></div>
     <div class="metric"><div class="label">Reserve</div><strong>${fmtBtc(reach.cold)}</strong><small>${reserve}${moving?` · ${moving}`:""}</small></div>
     <div class="metric"><div class="label">Key &amp; recovery checks</div><strong>${custodyAssessmentLabel(posture.tier)}</strong><small>${first?first.text:"No current findings in the game's checks; risks remain."}</small></div>
     <div class="metric"><div class="label">Next bill</div><strong>${reach.daysToBill} day${reach.daysToBill===1?"":"s"}</strong><small>${fmtUsd(forecast.estimated)}${reach.coldTooSlow?" · the reserve is too slow to meet it":forecast.cashAfter<0?" · cash will not cover it":" · covered"}</small></div>
-  </div></section>`;
+  </div></section>${treasurySection()==="finance"?"</details>":""}`;
 }
 
 function treasury(){
@@ -94,5 +94,5 @@ function treasury(){
      inside its parent, and a parent only as tall as the strip would release it a screen later. */
   /* The orientation card for the section sits under the bar, not above the strip: the position and the way
      between sections are what you came for, and the card explains whichever section you chose. */
-  return `${treasuryStrip()}${treasurySectionNav()}${sectionPulse()}${sections[treasurySection()]()}`;
+  return `${treasuryStrip()}${treasurySectionNav()}${treasurySection()==="finance"?"":sectionPulse()}${sections[treasurySection()]()}`;
 }

@@ -969,3 +969,15 @@ body.drawer-open .tour-card:not(.tour-center){right:auto;left:14px;width:min(400
 /* Anchor the help toggle to its own briefing, including in the stacked phone layout. */
 .stage-coach .briefing-copy>.hero-kicker{padding-right:44px}
 @media(max-width:800px){.stage-coach{position:relative;left:auto;top:auto}}
+
+/* Task-first guidance keeps reference material available without competing with the next action. */
+.setup-reference{margin-top:16px;color:var(--muted);font-size:13px;line-height:1.6}
+.setup-reference summary,.workshop-story summary{cursor:pointer;color:var(--text);font-weight:600}
+.setup-reference[open]>p{margin-top:12px}
+.bill-priority{grid-template-columns:repeat(3,minmax(0,1fr))}
+.bill-priority b{font-size:24px;line-height:1.3}
+.bill-next-action{padding:16px 0 4px}.bill-next-action h4{margin:0}.bill-next-action p{max-width:70ch;line-height:1.6;color:var(--muted)}
+@media(max-width:480px){.bill-priority{grid-template-columns:1fr}.bill-priority b{font-size:22px}}
+
+.treasury-position-reference{margin-bottom:12px;color:var(--muted);font-size:13px}.treasury-position-reference summary{cursor:pointer;padding:12px;border:1px solid var(--line)}.treasury-position-reference[open] .treasury-strip{margin-top:8px}
+.finance-reference>.grid{margin-top:16px}
