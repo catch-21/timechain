@@ -149,7 +149,7 @@ function tourWorkshopAction(d){
   const name=custodyProduct(d.product)?.name||"the signer";
   if(!d.inspected)return {label:"Inspect delivery and source",hint:`Check where <b>${name}</b> came from: press <b>Inspect delivery and source</b>.`,
     ring:['.custody-workshop [data-action="workshop-inspect"]','.cold-setup li.current [data-action="workshop-focus"]',".custody-workshop"],run:()=>inspectWorkshopDevice(d.uid)};
-  if(d.chainSource==="own"&&typeof nodeOnline==="function"&&!nodeOnline())return {label:"Use the provider's chain data",hint:`${name} is set to check payments against your own node, which is offline. Switch it to the provider's chain data (you can change it back once the node is up).`,
+  if(d.chainSource==="own"&&typeof nodeOnline==="function"&&!nodeOnline())return {label:"Use the provider's chain data",hint:`${name} checks payments against your node, which is offline. Switch it to the provider's data.`,
     ring:[".custody-workshop"],run:()=>setWorkshopClient(d.uid,"chainSource","provider")};
   return {label:"Record software and checks",hint:`Record the software that will show you each payment: press <b>Record software and payment-review checks</b>.`,
     ring:['.custody-workshop [data-action="workshop-prepare"]','.cold-setup li.current [data-action="workshop-focus"]',".custody-workshop"],run:()=>prepareWorkshopDevice(d.uid)};
@@ -205,17 +205,17 @@ function tourMoveRow(){
 
 const TOUR_STEPS=[
   {id:"welcome",center:true,chapter:"Tutorial",title:"Finish setting up, one step at a time",
-    body:"Your wallet has a key. In the next few minutes you will back it up, build a cold-storage reserve beside it, choose where your income lands and start mining. Each card asks for <b>one thing</b>, points at the button that does it, and moves on by itself once it is done. <b>The clock is held</b> until the last step, apart from the days a delivery takes."},
+    body:"Your wallet has a key. Back it up, build a cold reserve, then start mining. Each card asks for <b>one thing</b>. <b>The clock is held</b>."},
   {id:"walletkey",chapter:"Your wallet",tab:"custody",target:[".hot-wallet"],title:"Make your wallet's key",
-    body:"A block reward is paid to an address, and an address comes from a key. You made that key in the opening ceremony: it is the key behind your <b>online wallet</b>.",
+    body:"A block reward is paid to an address, which comes from a key. You made that key in the ceremony: it is behind your <b>online wallet</b>.",
     act:()=>null,done:s=>!!s.walletSetup&&!!s.walletSetup.done},
   {id:"hotbackup",chapter:"Your wallet",tab:"custody",target:[`.hot-wallet ${TOUR_PAPER}`,".hot-wallet"],title:"Write the key down",
-    body:"The ceremony sheet is destroyed, so that key now lives on one computer: the one in the mine. If its disk dies, the coins in it go with it. A copy on paper is free, and turns a dead disk into an afternoon's work.",
+    body:"That key lives on one computer. If its disk dies, the coins go with it. A paper copy is free and brings them back.",
     again:"Your online wallet's paper backup is gone, so it needs writing down again.",
     act:()=>{const k=hotKey();return k&&!hotKeyBackedUp()?tourBackupAction(k):null},
     done:s=>typeof hotKey!=="function"||!hotKey(s)||hotKeyBackedUp(s)},
   {id:"signer",chapter:"Cold storage",tab:"custody",target:['.cold-setup li.current [data-action="custody-buy"]',".cold-setup"],title:"Get a signer",
-    body:"Cold storage is a key that never touches the mining computer, so it needs a device of its own. Before hardware wallets that means a cheap computer that never goes online.",
+    body:"Cold storage is a key that never touches the mining computer. It needs a device of its own that stays offline.",
     again:"There is no signer any more (or none that can be back in time), so the reserve needs one again.",
     act:()=>{
       const o=tourSignerOrders()[0];
@@ -230,7 +230,7 @@ const TOUR_STEPS=[
     again:"No signer is checked and prepared any more.",
     act:tourPrepareAction,done:s=>tourSigners(s).some(d=>workshopPrepared(d))||tourColdKeys(s).length>0},
   {id:"reservekey",chapter:"Cold storage",tab:"custody",target:[".cold-setup"],title:"Make a reserve key and write it down",
-    body:"Create the secret on the signer, then copy it onto paper. The device can fail; the paper copy is how the key comes back. Anyone who reads it can spend with it, so it is kept private.",
+    body:"Create the secret on the signer, then copy it onto paper. The device can fail; the paper brings the key back. Keep it private.",
     again:"No reserve key is written down any more.",
     // One reserve key written down is the goal; extra keys made on extra signers are the player's own business.
     act:tourKeyAction,done:s=>tourColdKeys(s).some(tourBacked)},
@@ -239,11 +239,11 @@ const TOUR_STEPS=[
     again:"The reserve wallet is no longer ready: a key in charge of it changed, or its rule did.",
     act:tourAssignAction,done:s=>custodySetup(s).ready&&custodyAssignedKeys(s).every(tourBacked)},
   {id:"offsite",chapter:"Keep it safe",tab:"custody",target:[tourMoveRow,".cold-setup"],title:"Keep the backups away from the mine",
-    body:"The paper copies are in the same building as the computer and the signer, so one fire takes the lot. Send each to a <b>bank deposit box</b> (safest, $15 a month) or <b>a trusted person's house</b> (free, with a very small chance they help themselves).",
+    body:"The paper copies sit beside the computer and signer, so one fire takes the lot. Send each to a <b>bank box</b> (safest) or <b>a trusted house</b> (free).",
     again:"A backup is back at the mine.",
     act:tourMoveAction,done:s=>tourBackupsAtMine(s).length===0},
   {id:"payout",chapter:"Mining",tab:"pools",target:['[data-action="payout-destination"][data-value="cold"]',".payout-destinations"],title:"Choose where mining income lands",
-    body:"Every coin you mine is paid to an address you choose. <b>Cold storage</b> is the safest place and takes days to spend from; the <b>online wallet</b> can pay a bill this afternoon and is reachable by anyone who reaches the computer.",
+    body:"Your mined coins go to an address you choose. <b>Cold storage</b> is safest but slow to spend; the <b>online wallet</b> is fast but reachable.",
     again:"Mining income is no longer going where you chose.",
     keep:true,
     act:()=>payoutDestinationBlockReason("cold")?{label:"Keep it in the online wallet",hint:"Cold storage cannot receive yet, so keep income in the online wallet for now.",ring:[".payout-destinations"],run:()=>{state.tour.payoutKept=true}}
@@ -251,7 +251,7 @@ const TOUR_STEPS=[
         ring:['[data-action="payout-destination"][data-value="cold"]',".payout-destinations"],run:()=>setPayoutDestination("cold")},
     done:s=>poolAccount().destination==="cold"||!!(s.tour&&s.tour.payoutKept)},
   {id:"start",finish:true,chapter:"Mining",tab:"mine",target:[tourSpeedButton,".topbar"],title:"Start mining",
-    body:"Your laptop is on the floor and switched on. More hash means a better chance of a reward, and a bigger power bill. Your first job is small: <b>keep it mining and pay the first bill</b>. The Dashboard briefing says what to do next.",
+    body:"Your laptop is on and mining. More hash earns more often but costs more power. <b>Keep it mining and pay the first bill</b>.",
     act:()=>({label:"Start the clock · 1×",hint:"Press <b>1×</b> to start the clock. The tutorial ends, and you can replay it from the footer.",ring:[tourSpeedButton,".topbar"],
       run:()=>{state.speed=1;state.returnSpeed=1;state.lastReal=Date.now();setTimer()}}),
     done:s=>s.speed>0}
@@ -457,7 +457,7 @@ function tourBringIntoView(el){
   if(el.closest(".topbar,.mobile-pause-button"))return;
   const r=el.getBoundingClientRect(),narrow=window.innerWidth<=800,card=document.querySelector(".tour-card");
   const floor=narrow&&card?card.getBoundingClientRect().top-24:window.innerHeight-40;
-  const ceiling=Math.max(...[".topbar",".treasury-sections",".mine-sections",".toast"].map(q=>{const e=document.querySelector(q);if(!e)return 0;const b=e.getBoundingClientRect();return b.bottom>0&&b.top<200?b.bottom:0}),0)+16;
+  const ceiling=Math.max(...[".topbar",".hud",".drawer-head",".treasury-sections",".mine-sections",".toast"].map(q=>{const e=document.querySelector(q);if(!e)return 0;const b=e.getBoundingClientRect();return b.bottom>0&&b.top<200?b.bottom:0}),0)+16;
   if(r.top>=ceiling&&Math.min(r.bottom,r.top+120)<=floor)return;
   window.scrollBy({top:r.top-ceiling-Math.max(0,Math.min(80,(floor-ceiling-r.height)/3)),behavior:"instant"});
 }

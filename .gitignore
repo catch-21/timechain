@@ -9,3 +9,4 @@ mutation-survivors.json
 # Finder metadata. Written into any directory the user opens, at any depth, and
 # recreated the moment it is removed - so it is ignored rather than deleted.
 .DS_Store
+.vercel

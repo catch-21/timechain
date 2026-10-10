@@ -95,7 +95,7 @@ function placeHardwareOrder(id,qty,btcCost=0){const h=HARDWARE.find(x=>x.id===id
     }
   }state.procurementOrders.push({id,qty,due:state.time+terms.days*DAY,risk:terms.risk,partialRisk:terms.partialRisk,vendor:terms.vendor,slips:0,label:terms.label,channel:terms.channel,
     // Drawn once for the batch: these came off one site with one maintenance history.
-    condition:terms.channel==="secondary"?rollSecondaryCondition(h):100});const paid=btcCost>0?fmtBtc(btcCost):fmtUsd(hardwareUnitCost(h)*qty);log(`Ordered ${qty} × ${h.name}`,`-${paid} · ${terms.vendor} · ${terms.days}-day lead time`,"fleet");showToast("Miner order placed",`${qty} × ${h.name} via ${terms.vendor}: ETA ${dateFmt(state.time+terms.days*DAY)} · ${Math.round(terms.risk*100)}% delay risk.${hardwarePurchaseLimits(h).siteMax<qty?" The site will rack what it has room for and hold the rest in storage.":""}`,"info","mine");save();renderMineContent();return true}
+    condition:terms.channel==="secondary"?rollSecondaryCondition(h):100});const paid=btcCost>0?fmtBtc(btcCost):fmtUsd(hardwareUnitCost(h)*qty);log(`Ordered ${qty} × ${h.name}`,`-${paid} · ${terms.vendor} · ${terms.days}-day lead time`,"fleet");showToast("Miner order placed",`${qty} × ${h.name} via ${terms.vendor}: ETA ${dateFmt(state.time+terms.days*DAY)}, ${Math.round(terms.risk*100)}% delay risk.`,"info","mine");save();renderMineContent();return true}
 function buyHardware(id,requested=1){
   const h=HARDWARE.find(x=>x.id===id);if(!h||h.permanent||state.time<at(h.date))return;
   const unitCost=hardwareUnitCost(h);
@@ -253,7 +253,7 @@ function downsizeFacility(id){
   state.facilityUpgradeJob={id,due:state.time+Math.ceil(days)*DAY,cost,risk,down:true};
   state.power=false;
   log(`Downsizing to ${f.name}`,`${Math.ceil(days)} days · -${fmtUsd(cost)} · rent falls ${fmtUsd(saving)}/month`,"operations");
-  showToast("Downsizing underway",`Mining is paused while the fleet is powered down, moved and re-racked at ${f.name}. Rent falls from ${fmtUsd(leaving.rent)} to ${fmtUsd(f.rent)} a month once commissioning finishes.${shed.items.length?` ${shed.items.reduce((n,i)=>n+i.qty,0)} unit${shed.items.reduce((n,i)=>n+i.qty,0)===1?"":"s"} of cooling plant were sold with the old site for ${fmtUsd(shed.credit)} - ${f.name} cannot host them.`:""} ETA ${dateFmt(state.facilityUpgradeJob.due)}.`,"info","facilities");
+  showToast("Downsizing underway",`Mining is paused during the move to ${f.name}. Rent falls to ${fmtUsd(f.rent)} a month.`,"info","facilities");
   save();render();
 }
 function upgradeFacility(id){
@@ -265,17 +265,17 @@ function upgradeFacility(id){
   if(state.relocationJob)return showToast("Relocation underway","The fleet must arrive before a facility upgrade can begin.");
   const reserve=facilityReserve(f),required=f.cost+reserve;
   if(state.cash<f.cost)return showToast("Capital required",`Fit-out costs ${fmtUsd(f.cost)}.`);
-  if(state.cash<required)return showToast("Cash reserve required",`Keep ${fmtUsd(reserve)} in liquid cash for two months of expected power, rent, connectivity, staff and node costs after the move.`);
+  if(state.cash<required)return showToast("Cash reserve required",`Keep ${fmtUsd(reserve)} in liquid cash: two months of costs after the move.`);
   const risk=facilityMoveRisk(id)*(hasStaff("logistics")?.8:1);
   const days=Math.max(3,Math.ceil(4+fleet().count/70+(target-current-1)*2))*(hasStaff("logistics")?.8:1);
   state.cash-=f.cost;state.facilityUpgradeJob={id,due:state.time+Math.ceil(days)*DAY,cost:f.cost,risk};state.power=false;
   log(`Facility upgrade dispatched to ${f.name}`,`${Math.ceil(days)} days · -${fmtUsd(f.cost)}`,"operations");
-  showToast("Upgrade underway",`Mining is paused while the fleet is powered down, moved and re-commissioned at ${f.name}. ETA ${dateFmt(state.facilityUpgradeJob.due)}.`);
+  showToast("Upgrade underway",`Mining is paused while the fleet moves to ${f.name}. ETA ${dateFmt(state.facilityUpgradeJob.due)}.`);
   save();render();
 }
 function takeSpeculation(id,fraction){
   const s=SPECULATIONS.find(x=>x.id===id);if(!s||state.speculations.includes(id))return;
-  if(!offerOpen(s))return showToast("That window has closed",`${s.name} was a trade you could take between ${offerWindowLabel(s)}. Taking it now would be a different decision from the one described here.`,"blocked","market");
+  if(!offerOpen(s))return showToast("That window has closed",`${s.name} ran ${offerWindowLabel(s)}. That moment has passed.`,"blocked","market");
   const stake=state.wallets.hot*fraction;if(stake<=0)return showToast("No spendable BTC","Speculative launches can only use BTC in your hot wallet.");
   state.wallets.hot-=stake;state.speculations.push(id);
   if(nextRand()<s.chance){const returnBtc=stake*s.payout;state.wallets.hot+=returnBtc;log(`${s.name} paid off`,`+${fmtBtc(returnBtc-stake)}`);showToast("Speculation paid off",`${s.name} returned ${s.payout.toFixed(1)}× your BTC stake.`)}
@@ -301,7 +301,7 @@ function offerDaysLeft(item,t=state.time){
 }
 function donateBtc(id,fraction){
   const campaign=DONATION_CAMPAIGNS.find(x=>x.id===id);if(!campaign||state.donations.some(x=>x.id===id))return;
-  if(!offerOpen(campaign))return showToast("That moment has passed",`The ${campaign.name} ran from ${offerWindowLabel(campaign)}. A campaign is a response to something happening at the time; it is not a standing option.`,"blocked","custody");
+  if(!offerOpen(campaign))return showToast("That moment has passed",`The ${campaign.name} ran ${offerWindowLabel(campaign)}. It is not a standing option.`,"blocked","custody");
   const btc=state.wallets.hot*fraction;if(btc<=0)return showToast("No spendable BTC","Donations use BTC from your hot wallet.");
   /* GIVING COINS AWAY IS THE MOST EXPENSIVE THING AN OPERATOR CAN DO, and the only one the
      score cannot repay: every other use of BTC in this game comes back as machines, capacity
@@ -314,7 +314,7 @@ function donateBtc(id,fraction){
   state.wallets.hot-=btc;state.donations.push({id,btc,time:state.time});
   awardXp(xp,"spend");
   log(`Donated: ${campaign.name}`,`-${fmtBtc(btc)} · +${fmtNum(xp)} XP`,"custody");
-  showToast("BTC donated",`${fmtBtc(btc)} sent to ${campaign.name}, and ${fmtNum(xp)} operator XP for it. Nothing else in this game spends bitcoin without expecting it back.`,"milestone","custody");
+  showToast("BTC donated",`${fmtBtc(btc)} sent to ${campaign.name}. +${fmtNum(xp)} operator XP.`,"milestone","custody");
   save();render();
 }
 function moveRegion(id){
@@ -333,7 +333,7 @@ function phoneSecurity(){state.phone=Object.assign({owned:false,twoFA:{exchange:
 function buyPhone(){
   const phone=phoneSecurity();if(phone.owned)return;
   const cost=120;if(state.cash<cost)return showToast("Not enough cash","A basic phone and a working number cost $120 in this model.");
-  state.cash-=cost;phone.owned=true;log("Mobile phone added","A phone can receive fresh email 2FA codes for exchange and pool accounts","custody");showToast("Phone added","This phone is now an operation asset. Keep it separate from the mining laptop where practical.","info","custody");save();render();
+  state.cash-=cost;phone.owned=true;log("Mobile phone added","A phone can receive fresh email 2FA codes for exchange and pool accounts","custody");showToast("Phone added","The phone is now an operation asset. Keep it off the mining laptop.","info","custody");save();render();
 }
 function toggleAccountTwoFA(account){
   const phone=phoneSecurity();
@@ -350,7 +350,7 @@ function upgradeAccountSecurity(){
 function buyBackupNode(){
   if(state.backupNode.enabled||state.node<1||state.time<at(BACKUP_NODE.date))return;
   if(state.cash<BACKUP_NODE.cost)return showToast("Not enough cash",`${BACKUP_NODE.name} setup costs ${fmtUsd(BACKUP_NODE.cost)}.`);
-  const lag=initialBackupSyncLag();state.cash-=BACKUP_NODE.cost;state.backupNode.enabled=true;state.nodeSync.backupLag=lag;state.nodeSync.backupPeak=lag;log("Geographic backup node deployed",`${fmtNum(lag)} days of block history queued for validation`);showToast("Initial block download",`The remote node is installed, but it must independently validate ${fmtNum(lag)} modelled days of backlog before it can protect verification continuity.`);save();render();
+  const lag=initialBackupSyncLag();state.cash-=BACKUP_NODE.cost;state.backupNode.enabled=true;state.nodeSync.backupLag=lag;state.nodeSync.backupPeak=lag;log("Geographic backup node deployed",`${fmtNum(lag)} days of block history queued for validation`);showToast("Initial block download",`The node must validate ${fmtNum(lag)} modelled days of backlog before it protects you.`);save();render();
 }
 function upgradeNodeStorage(gb){
   const tier=NODE_STORAGE.find(x=>x.gb===Number(gb));if(!tier||tier.gb<=state.nodeStorage||state.time<at(tier.date))return;
@@ -441,7 +441,7 @@ function claimFaucet(){
   clearTimeout(faucetTimer);faucet=null;document.querySelector(".faucet-pop")?.remove();save();refreshLive();
 }
 function deployLightning(fraction){
-  if(!lightningAvailable())return showToast("Lightning unavailable","Lightning routing unlocks in 2018 and requires a synchronized dedicated primary node in archival or relay mode.");
+  if(!lightningAvailable())return showToast("Lightning unavailable","Unlocks in 2018 and needs a synchronised dedicated primary node.");
   const btc=state.wallets.hot*fraction;if(btc<=0)return showToast("No spendable BTC","Move bitcoin into the hot wallet first.");
   state.wallets.hot-=btc;state.lightning.locked+=btc;log("Lightning liquidity deployed",`-${fmtBtc(btc)} locked`);save();render();
 }
@@ -451,7 +451,7 @@ function withdrawLightning(){
 }
 function payDebt(){
   if(state.debt<=0)return;if(state.cash<state.debt)return showToast("Bill still due",`You need ${fmtUsd(state.debt-state.cash)} more.`);
-  state.cash-=state.debt;log("Grid service restored",fmtUsd(state.debt),"finance");state.debt=0;state.arrearsDue=0;state.gridCutAnnounced=false;state.power=sitePowerAfterBill();showToast("Arrears cleared","Power and internet are restored. The next operating bill is due at the month boundary as usual.","success","dashboard");save();render();
+  state.cash-=state.debt;log("Grid service restored",fmtUsd(state.debt),"finance");state.debt=0;state.arrearsDue=0;state.gridCutAnnounced=false;state.power=sitePowerAfterBill();showToast("Arrears cleared","Power and internet are restored. The next bill falls due as usual.","success","dashboard");save();render();
 }
 function setContract(id){if(!POWER_CONTRACTS.some(x=>x.id===id)||id===state.contract)return;state.contract=id;log("Power contract changed",powerContract().name);save();render()}
 function setConnectivityPlan(id){const plan=CONNECTIVITY_PLANS.find(x=>x.id===id);if(!plan||id===state.connectivity)return;
@@ -468,12 +468,12 @@ function hireStaff(id){const s=STAFF.find(x=>x.id===id);if(!s||(id!=="fieldtech"
     const junior=STAFF.find(x=>x.id===s.supersedes);
     state.staff=state.staff.filter(x=>x!==s.supersedes);
     log(`${junior?.name||s.supersedes} role absorbed`,`${s.name} takes over materials planning`,"operations");
-  }if(!staffHiringAvailable())return showToast("Staffing unavailable","Move into the tier 3 Light industrial unit or a larger facility before building an internal team.");state.staff.push(id);const count=fieldTechnicianCount();log(`Hired ${s.name}`,id==="fieldtech"?`${count} technicians · ${fmtUsd(s.salary*count)}/month total`:`${fmtUsd(s.salary)}/month`);save();render()}
+  }if(!staffHiringAvailable())return showToast("Staffing unavailable","Move into the Light industrial unit or larger before building a team.");state.staff.push(id);const count=fieldTechnicianCount();log(`Hired ${s.name}`,id==="fieldtech"?`${count} technicians · ${fmtUsd(s.salary*count)}/month total`:`${fmtUsd(s.salary)}/month`);save();render()}
 function dismissStaff(id){
   const role=STAFF.find(x=>x.id===id);if(!role||!hasStaff(id))return;
   if(id==="fieldtech"){
     const committed=(state.maintenance.serviceJobs||[]).reduce((sum,job)=>sum+(job.contracted?0:Number(job.crew||0)),0);
-    if(fieldTechnicianCount()-1<committed)return showToast("Technician still on a job",`${committed} technician${committed===1?" is":"s are"} assigned to active repairs. Wait for a service job to finish before cutting the crew.`);
+    if(fieldTechnicianCount()-1<committed)return showToast("Technician still on a job",`${committed} technician${committed===1?" is":"s are"} on active repairs. Let a job finish first.`);
   }
   const countBefore=state.staff.filter(x=>x===id).length;
   state.staff.splice(state.staff.indexOf(id),1);
@@ -481,7 +481,7 @@ function dismissStaff(id){
   const techs=fieldTechnicianCount();
   if(!techs&&state.autoRepair)state.autoRepair=false;
   log(`Dismissed ${role.name}`,`One month notice · ${fmtUsd(role.salary)} added to this month's bill${id==="fieldtech"?` · ${techs} technician${techs===1?"":"s"} remaining`:""}`);
-  showToast(`${role.name} dismissed`,`Salary stops now. One month's notice (${fmtUsd(role.salary)}) is added to the accrued bill.${id==="fieldtech"&&!techs?" You are back to servicing the fleet yourself.":""}`,"info");
+  showToast(`${role.name} dismissed`,`Salary stops; a month's notice (${fmtUsd(role.salary)}) is added.${id==="fieldtech"&&!techs?" You service the fleet yourself again.":""}`,"info");
   custodyOnDismiss(id,countBefore);
   save();render();
 }
@@ -536,7 +536,7 @@ function sellBtc(bucket,fraction){
   if(impact>0)addPressure(notional,1);
   state.wallets[bucket]-=btc;state.cash+=usd;log(bucket==="etf"?"Sold ETF exposure":"Sold bitcoin",`-${fmtBtc(btc)} · +${fmtUsd(usd)} at ${fmtUsd(price)}${impact>=.001?` · ${impactNote(impact)}`:""}`,"trade");
   if(state.settlementSaleMode&&state.pendingSettlement&&state.cash+1e-8>=state.pendingSettlement.due){state.settlementSaleMode=false;finishMonthlySettlement("btc-rescue");return}
-  showToast(bucket==="etf"?"ETF sale complete":"Bitcoin sale complete",impact>=.01?`${fmtBtc(btc)} became ${fmtUsd(usd)}. Modelled market impact reduced the proceeds by ${formatPercent(impact*100)}% before the combined effect of fees. A large sale reaches less favourable bids instead of filling entirely at the reference price. ${fmtUsd(state.cash)} cash is now available.`:`${fmtBtc(btc)} became ${fmtUsd(usd)} after fees. ${fmtUsd(state.cash)} cash is now available.`,"info","market");save();render();
+  showToast(bucket==="etf"?"ETF sale complete":"Bitcoin sale complete",impact>=.01?`${fmtBtc(btc)} became ${fmtUsd(usd)}. A large sale reached less favourable bids. ${fmtUsd(state.cash)} cash is available.`:`${fmtBtc(btc)} became ${fmtUsd(usd)} after fees. ${fmtUsd(state.cash)} cash is available.`,"info","market");save();render();
 }
 function depositAndSell(bucket,fraction=1){
   if(bucket==="etf")return;
@@ -547,7 +547,7 @@ function depositAndSell(bucket,fraction=1){
   utxoMoved("hot",bucket,fraction);state.wallets.hot-=hotGross;state.cash+=usd;if(impact>0)addPressure(gross,1);
   log("Deposited and sold bitcoin",`${fmtBtc(hotGross)} from hot wallet · +${fmtUsd(usd)} cash at ${fmtUsd(price)}`,"trade");
   if(state.settlementSaleMode&&state.pendingSettlement&&state.cash+1e-8>=state.pendingSettlement.due){state.settlementSaleMode=false;finishMonthlySettlement("btc-rescue");return}
-  showToast("Deposit and sale complete",`${fmtBtc(btc)} reached ${walletName(bucket)} and sold for ${fmtUsd(usd)} after transfer, venue fees and market impact. ${fmtUsd(state.cash)} cash is now available.` ,"info","market");save();render();
+  showToast("Deposit and sale complete",`${fmtBtc(btc)} sold for ${fmtUsd(usd)} after fees and impact. ${fmtUsd(state.cash)} cash is available.` ,"info","market");save();render();
 }
 /* Spending it. The coins leave, a code arrives, and the only thing the operation gains is
    the experience of having used the money as money. That is the joke and it is also the
@@ -582,7 +582,7 @@ function giftCardHindsight(t=state.time){
 function transfer(from,to,fraction,opts={}){
   if(venueFrozen(from))return showToast("Withdrawals frozen",`${walletName(from)} has paused withdrawals until ${dateFmt(state.ops.venueFreezes[from])}.`);
   fraction=clamp(Number(fraction)||0,0.01,1);const gross=state.wallets[from]*fraction;if(gross<=0)return;
-  if(to==="cold"&&!custodySetup().ready)return showToast("Cold storage needs a signer first","A wallet nobody can sign for is a place coins go to be lost. Follow the steps in Set up cold storage on the Custody section: a signer, a key, a backup, then assign the key.","blocked","custody");
+  if(to==="cold"&&!custodySetup().ready)return showToast("Cold storage needs a signer first","Set up cold storage on the Custody section first: a signer, a key, a backup.","blocked","custody");
   const fee=transferNetworkFee(from,fraction,opts);if(gross<=fee)return showToast("Transfer too small",`The selected ${formatPercent(fraction*100)}% is not enough to cover the ${fmtBtc(fee)} network fee.`);const btc=gross-fee;
   /* Everything except cold storage moves the moment it is asked to. Cold does not, because
      that is what cold storage IS - see signing.js. */
@@ -615,7 +615,7 @@ function startLearning(id){
 }
 function answerLearningCheck(answer){
   const item=learningItem();if(!item||!state.learning.waiting||!item.check)return;
-  const correct=Number(answer)===item.check.answer;awardLearning(item,correct?1:.6);if(!correct)showToast("Knowledge check missed",`You completed ${item.title}, but received 60% of the available knowledge. Review the explanation before the next lesson.`,"warning","learn");save();render();
+  const correct=Number(answer)===item.check.answer;awardLearning(item,correct?1:.6);if(!correct)showToast("Knowledge check missed",`${item.title} done, at 60% of the knowledge. Review the explanation.`,"warning","learn");save();render();
 }
 function venueAvailable(id){
   if(id==="mtgox")return state.time>=MARKET&&state.time<at("2014-02-24");

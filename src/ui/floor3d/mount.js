@@ -20,7 +20,7 @@
 
 const FLOOR3D_SCRIPTS=["vendor/three.floor.js","src/ui/floor3d/silhouettes.js",
   "src/ui/floor3d/cooling.js","src/ui/floor3d/sites.js","src/ui/floor3d/scenery.js","src/ui/floor3d/scene.js",
-  "src/ui/floor3d/model.js"];
+  "src/ui/floor3d/model.js","src/ui/floor3d/land.js"];
 
 let floor3dState="idle";      // idle | loading | ready | unsupported | failed
 let floor3dRenderer=null,floor3dCanvas=null,floor3dCamera=null;
@@ -92,6 +92,12 @@ function floor3dUnavailableReason(){
 /* There is no longer a view to want. The floor is the 3D floor wherever one can be drawn, so
    this asks the only remaining question: did it fail, or can it not run here at all. */
 function floor3dWanted(){return state.floorView==="3d"&&!floor3dUnavailableReason()}
+/* TWO SCALES, ONE RENDERER. The stage beside the panels draws either the land around the
+   operation or the room inside the site (room.js decides which); the Mine panel only ever draws
+   the room. Each scale keeps its own camera, so going inside and back out returns to the view
+   that was left. */
+function floor3dOnStage(){return !!document.querySelector(".floor-3d-mount.stage-3d")}
+function floor3dMode(){return floor3dOnStage()&&typeof roomStageScale==="function"&&typeof FloorLand==="object"?roomStageScale():"room"}
 
 /* Loads the library and the view modules once, in order, then paints. A failure here is not
    an error the player has to deal with - it turns the toggle off and says why. */
@@ -121,6 +127,7 @@ function ensureFloor3dLoaded(){
 /* What the floor looks like, reduced to a string. If this has not changed there is nothing
    to rebuild, however many times the page has repainted. */
 function floor3dSignatureNow(){
+  if(floor3dMode()==="land")return "land|"+FloorLand.signature();
   const parts=[state.facility,state.region,floor3dWanted()?"3d":"2d",
     state.power?"on":"off",typeof thermalPowerAvailable==="function"&&thermalPowerAvailable()?"cool":"hot",
     (state.staff||[]).slice().sort().join(","),
@@ -140,12 +147,13 @@ const FLOOR3D_STATUS_COLORS={online:0x75e3b2,fault:0xff705d,repair:0x68bafa,off:
 /* The other half of the same picture, cheap to compute and cheap to answer: repaint, no
    rebuild. */
 function floor3dStatusSignatureNow(){
+  if(floor3dMode()==="land")return "";
   const parts=[];
   for(const b of floorBatches())parts.push(b.status);
   return parts.join(",");
 }
 function floor3dApplyStatuses(){
-  if(!floor3dBuilt||typeof floor3dBuilt.recolour!=="function")return;
+  if(!floor3dBuilt||typeof floor3dBuilt.recolour!=="function"||floor3dMode()==="land")return;
   const byBatch=new Map();
   for(const b of floorBatches())byBatch.set(b.id,b.status);
   /* The same table the assembler paints from. Two copies of a colour map is a colour map that
@@ -274,6 +282,7 @@ function floor3dAlertFor(batch){
 let floor3dBaseColours=null,floor3dAlertMap=null;
 function floor3dPrepareAlerts(){
   floor3dBaseColours=[];floor3dAlertMap=new Map();
+  if(floor3dMode()==="land")return;
   for(const batch of FloorModel.batches()){
     const alert=floor3dAlertFor(batch);
     if(alert)floor3dAlertMap.set(batch.id,alert);
@@ -352,7 +361,7 @@ function floor3dDrawNow(){
   /* The PANEL is sized from the default vantage, not the current one. Deriving its height
      from whichever way the camera happens to be pointing meant the card grew and shrank
      under the cursor while you dragged, which is unusable. */
-  const frame=floor3dViewIsDefault()?view:floor3dExtent(bounds,FLOOR3D_DEFAULT_VIEW.azimuth,FLOOR3D_DEFAULT_VIEW.elevation,distance);
+  const home=floor3dDefaultView(floor3dViewMode),frame=floor3dViewIsDefault()?view:floor3dExtent(bounds,home.azimuth,home.elevation,distance);
   let halfW=view.halfW,halfH=view.halfH;
   /* The panel takes its shape from the room rather than the other way round. A fixed
      width*0.42 letterbox was 2.38:1 against scenes that project between 1.37:1 (a spare
@@ -362,8 +371,9 @@ function floor3dDrawNow(){
      The clamps stop a tall room turning the panel into a tower, and stop a wide one
      collapsing it to a strip. */
   floor3dFitShadow(bounds);
-  const contentAspect=frame.halfW/frame.halfH;
-  const height=Math.max(1,Math.round(Math.min(
+  const contentAspect=frame.halfW/frame.halfH,fill=host.classList.contains("stage-3d")?Math.round(host.clientHeight):0;
+  // The stage is sized by the page; only the Mine panel takes its shape from the room.
+  const height=fill>0?fill:Math.max(1,Math.round(Math.min(
     Math.max(width/contentAspect, width*FLOOR3D_MIN_ASPECT),
     width*FLOOR3D_MAX_ASPECT,
     Math.max(260,(window.innerHeight||760)*FLOOR3D_VIEWPORT_SHARE))));
@@ -381,6 +391,12 @@ function floor3dDrawNow(){
   floor3dCamera.lookAt(bounds.x,bounds.y,bounds.z);
   floor3dCamera.updateProjectionMatrix();
   floor3dRenderer.render(floor3dScene,floor3dCamera);
+  if(floor3dBuilt.labels&&typeof roomPlaceLabels==="function")roomPlaceLabels(floor3dProject,`${floor3dView.azimuth}|${floor3dView.elevation}|${zoom}|${width}|${height}`);
+}
+/* Where a point in the scene lands on the canvas, in CSS pixels. */
+function floor3dProject(pos){
+  const v=new FloorThree.Vector3(pos[0],pos[1],pos[2]).project(floor3dCamera);
+  return{x:(v.x+1)/2*floor3dCanvas.clientWidth,y:(1-v.y)/2*floor3dCanvas.clientHeight,inView:v.x>-1.05&&v.x<1.05&&v.y>-1.05&&v.y<1.05};
 }
 
 /* Measuring the scene without Box3.
@@ -441,6 +457,11 @@ function floor3dFitShadow(bounds){
   if(signature===floor3dShadowKey)return;
   floor3dShadowKey=signature;
   if(floor3dRenderer)floor3dRenderer.shadowMap.needsUpdate=true;
+  /* The room is lit from a fixed point a few metres up. The land is a hundred and fifty metres
+     across, so its sun stands well back along the same direction, and its shadow map is finer. */
+  const land=floor3dViewMode==="land",size=land?2048:1024;
+  if(key.shadow.mapSize.width!==size){key.shadow.mapSize.width=size;key.shadow.mapSize.height=size;if(key.shadow.map){key.shadow.map.dispose();key.shadow.map=null}}
+  if(land)key.position.set(bounds.x+bounds.radius*.9,bounds.radius*1.1,bounds.z+bounds.radius*.6);else key.position.set(9,11,6);
   const reach=bounds.radius*1.35,camera=key.shadow.camera;
   camera.left=-reach;camera.right=reach;camera.top=reach;camera.bottom=-reach;
   camera.near=.5;camera.far=Math.max(20,bounds.radius*14);
@@ -575,7 +596,7 @@ function floor3dMeasure(root){
   return {x,y,z,radius,minX,minY,minZ,maxX,maxY,maxZ};
 }
 
-let floor3dScene=null;
+let floor3dScene=null,floor3dHemi=null;
 function floor3dBuildScene(){
   const T=FloorThree;
   if(!floor3dScene){
@@ -585,7 +606,7 @@ function floor3dBuildScene(){
        leaves nothing for a shadow to darken - machines sat on the floor without touching it.
        The sky term now fills the shadows instead of erasing them, and the key is lower in
        the sky so what it casts is long enough to see. */
-    floor3dScene.add(new T.HemisphereLight(0xe6f6ff,0x33424c,1.3));
+    floor3dHemi=new T.HemisphereLight(0xe6f6ff,0x33424c,1.3);floor3dScene.add(floor3dHemi);
     const key=new T.DirectionalLight(0xffe8c2,3.2);key.position.set(9,11,6);
     key.castShadow=true;key.shadow.mapSize.width=1024;key.shadow.mapSize.height=1024;
     // Normal bias rather than a heavy depth bias: a large constant bias detaches the shadow
@@ -602,6 +623,11 @@ function floor3dBuildScene(){
     floor3dRenderer.shadowMap.autoUpdate=false;
     floor3dRenderer.shadowMap.needsUpdate=true;
   }
+  /* The land is daylight on a model under a night-blue sky; the room keeps its workshop light. */
+  const land=floor3dMode()==="land";
+  floor3dScene.background=land?FloorLand.sky():null;
+  floor3dHemi.color.set(land?0xd8ecff:0xe6f6ff);floor3dHemi.groundColor.set(land?0x2e3a30:0x33424c);floor3dHemi.intensity=land?1.05:1.3;
+  floor3dKeyLight.color.set(land?0xffe0b4:0xffe8c2);floor3dKeyLight.intensity=land?2.7:3.2;
   if(floor3dBuilt){floor3dScene.remove(floor3dBuilt.root);floor3dDisposeScene()}
   /* A BUILD THAT FAILS GETS A SMALLER ONE, NOT THE FLAT FLOOR.
 
@@ -613,7 +639,7 @@ function floor3dBuildScene(){
      representation. */
   floor3dBuilt=null;
   for(const relief of [1,2,4]){
-    try{ floor3dBuilt=FloorScene.build(FloorModel.describe(),{relief}); break }
+    try{ floor3dBuilt=land?FloorLand.build(FloorLand.describe()):FloorScene.build(FloorModel.describe(),{relief}); break }
     catch(error){
       floor3dDisposeScene();
       if(relief===4){
@@ -626,7 +652,7 @@ function floor3dBuildScene(){
   floor3dPickTable=floor3dBuildPickTable(floor3dBuilt.root);
   // New geometry casts new shadows; the cached map has to be told.
   floor3dRenderer.shadowMap.needsUpdate=true;
-  floor3dBounds=floor3dMeasure(floor3dBuilt.root)||{x:floor3dBuilt.cx,y:1,z:floor3dBuilt.cz,
+  floor3dBounds=floor3dBuilt.bounds||floor3dMeasure(floor3dBuilt.root)||{x:floor3dBuilt.cx,y:1,z:floor3dBuilt.cz,
     radius:Math.max(floor3dBuilt.width,floor3dBuilt.depth)/2};
   floor3dPrepareAlerts();
 }
@@ -649,12 +675,22 @@ function floor3dBuildScene(){
 const FLOOR3D_DEFAULT_VIEW={azimuth:Math.PI/4,elevation:Math.atan2(.8,Math.SQRT2),zoom:1};
 const FLOOR3D_MIN_ELEVATION=.18,FLOOR3D_MAX_ELEVATION=1.32;
 const FLOOR3D_MIN_ZOOM=.55,FLOOR3D_MAX_ZOOM=6;
-let floor3dView={...FLOOR3D_DEFAULT_VIEW},floor3dViewTouched=false;
+/* The land is a map: seen from higher up, and turned so the mountains stand behind the town. */
+const FLOOR3D_LAND_VIEW={azimuth:.12,elevation:.74,zoom:1.14};
+let floor3dView={...FLOOR3D_DEFAULT_VIEW},floor3dViewTouched=false,floor3dViewMode="room";
+const floor3dSavedViews={};
+function floor3dDefaultView(mode){return mode==="land"?FLOOR3D_LAND_VIEW:FLOOR3D_DEFAULT_VIEW}
+function floor3dUseViewFor(mode){
+  if(mode===floor3dViewMode)return;
+  floor3dSavedViews[floor3dViewMode]={view:floor3dView,touched:floor3dViewTouched};
+  const saved=floor3dSavedViews[mode];
+  floor3dView=saved?saved.view:{...floor3dDefaultView(mode)};floor3dViewTouched=saved?saved.touched:false;floor3dViewMode=mode;
+}
 function floor3dViewIsDefault(){
   return !floor3dViewTouched;
 }
 function floor3dResetView(){
-  floor3dView={...FLOOR3D_DEFAULT_VIEW};floor3dViewTouched=false;
+  floor3dView={...floor3dDefaultView(floor3dViewMode)};floor3dViewTouched=false;
   floor3dSyncViewControls();floor3dDraw();
 }
 function floor3dZoomBy(factor){
@@ -708,6 +744,13 @@ function floor3dApplyHover(next){
 function floor3dUpdateReadout(){
   const host=document.querySelector("[data-floor3d-readout]");
   if(!host)return;
+  if(floor3dMode()==="land"){
+    const place=floor3dHover===null?null:FloorLand.property(floor3dHover);
+    document.querySelectorAll(".land-label.hover").forEach(el=>el.classList.remove("hover"));
+    if(place)document.querySelector(`.land-label[data-value="${place.key}"]`)?.classList.add("hover");
+    host.textContent=place?`${place.name} · ${place.label}${place.status==="yours"?" · click to go inside":""}`:"Drag to look around. Click your site to go inside.";
+    host.classList.toggle("live",!!place);return;
+  }
   const batch=floor3dHover===null?null:FloorModel.batches().find(b=>b.id===floor3dHover);
   if(!batch){host.textContent=floor3dSelectedLabel();host.classList.remove("live");return}
   host.classList.add("live");
@@ -716,7 +759,7 @@ function floor3dUpdateReadout(){
 function floor3dSelectedLabel(){
   const id=Number.isInteger(state.floorSelected)?state.floorSelected:-1;
   const batch=id<0?null:FloorModel.batches().find(b=>b.id===id);
-  if(!batch)return "Hover a machine to inspect it. Click a faulted one to open its repair.";
+  if(!batch)return floor3dOnStage()?"Drag to look around. Click a machine to inspect it.":"Hover a machine to inspect it. Click a faulted one to open its repair.";
   return `Selected: ${batch.hardware?.name||"machine"} · ${batch.label||batch.status}`;
 }
 function floor3dPointerMove(event){
@@ -741,6 +784,8 @@ function floor3dClick(event){
   if(floor3dSuppressClick){floor3dSuppressClick=false;return}
   const rect=floor3dCanvas.getBoundingClientRect();
   const id=floor3dPickAt(event.clientX-rect.left,event.clientY-rect.top);
+  // On the land a click is a property; the room decides what opening it means.
+  if(floor3dMode()==="land"){const place=id===null?null:FloorLand.property(id);if(place&&typeof roomLandOpen==="function")roomLandOpen(place.key);return}
   if(id===null){
     if(Number.isInteger(state.floorSelected)&&state.floorSelected>=0){
       state.floorSelected=-1;save();floor3dRebuild();
@@ -750,6 +795,8 @@ function floor3dClick(event){
   state.floorSelected=id;save();
   floor3dRebuild();
   const batch=FloorModel.batches().find(b=>b.id===id);
+  // On the stage a machine opens its inspector, which carries the repair; in the Mine panel it jumps to the repair.
+  if(batch&&batch.hardware&&floor3dOnStage()&&typeof roomMachinePick==="function"){roomMachinePick(batch.hardware.id);return}
   if(batch&&(batch.status==="fault"||batch.status==="repair")&&batch.hardware&&typeof focusServiceRow==="function")
     focusServiceRow(batch.hardware.id);
 }
@@ -822,6 +869,7 @@ function floor3dUpdateNow(){
   if(gl&&gl.isContextLost())return;
   if(floor3dCanvas.parentElement!==host)host.appendChild(floor3dCanvas);
   floor3dBindPointer();
+  floor3dUseViewFor(floor3dMode());
   const signature=floor3dSignatureNow();
   if(signature!==floor3dSignature){floor3dBuildScene();floor3dSignature=signature;floor3dStatusSignature=floor3dStatusSignatureNow()}
   else{
@@ -836,6 +884,7 @@ function floor3dUpdateNow(){
   if(!still&&floor3dBuilt&&(floor3dBuilt.animated||floor3dAnythingWrong())){
     const step=time=>{
       if(!floor3dCanvas||document.hidden||!floor3dCanvas.parentElement){floor3dRaf=0;return}
+      if(!floor3dCanvas.offsetWidth){floor3dRaf=requestAnimationFrame(step);return}
       try{
         if(floor3dBuilt.animated)floor3dBuilt.animate(time);
         floor3dPulse(time);

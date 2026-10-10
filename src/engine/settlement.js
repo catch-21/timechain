@@ -54,7 +54,7 @@ function deferSettlement(){
   state.bill=0;state.billLedger={energy:0,rent:0,internet:0,staff:0,insurance:0,nodeNetwork:0,other:0};
   state.lastMonth=pending.month;state.pendingSettlement=null;state.settlementSaleMode=false;
   log("Operating bill missed",`${fmtUsd(carried)} carried into arrears`,"finance");
-  showToast("Bill missed, grid still on",`${fmtUsd(carried)} is now in arrears. The site keeps running until the next bill on ${dateFmt(state.arrearsDue)}; if the arrears are still owed then, power and internet are cut until they are paid.`,"warning","finance");
+  showToast("Bill missed, grid still on",`${fmtUsd(carried)} is in arrears. Power and internet cut on ${dateFmt(state.arrearsDue)} if still owed.`,"warning","finance");
   state.speed=pending.resumeSpeed||state.returnSpeed||0;setTimer();save();render();
 }
 

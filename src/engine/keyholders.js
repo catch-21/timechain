@@ -58,7 +58,7 @@ function setKeyHolder(keyId,role){
   key.knownBy=[...custodyKnownBy(key)];
   key.holder=role;
   log(`Key ${key.label} now held by ${custodyHolderName(role)}`,was==="owner"?"Was held by you":`Was held by ${custodyHolderName(was)}, who still knows it`,"custody");
-  showToast("Key handed over",`${custodyHolderName(role)} now holds ${key.label}. You are delegating one part of the power to spend. A change in employment cannot erase a secret someone has learned.${was!=="owner"?` ${custodyHolderName(was)} still knows it, so dismissing them would still expose it.`:""}`,"info","custody");
+  showToast("Key handed over",`${custodyHolderName(role)} now holds ${key.label}.${was!=="owner"?` ${custodyHolderName(was)} still knows it.`:""}`,"info","custody");
   save();render();
 }
 /* A technician who is busy on a repair crew is not free to sign. */
@@ -85,7 +85,7 @@ function custodyOnDismiss(roleId,countBefore=1){
   const name=STAFF.find(r=>r.id===roleId)?.name||roleId,list=hit.map(k=>k.label).join(", ");
   log(`${name} left knowing ${hit.length===1?"a key":"keys"}`,`${list} · replace ${hit.length===1?"it":"them"}`,"custody");
   showToast(`${hit.length===1?"A key is":"Keys are"} now known to a former employee`,
-    `${name} knew ${list}. ${hit.length===1?"It stays":"They stay"} in the wallet until ${hit.length===1?"it is":"they are"} replaced, and a former employee is an insider risk for as long as that takes. Rotate ${hit.length===1?"it":"them"} onto a spare signer.`,"bad","custody");
+    `${name} knew ${list}. Rotate ${hit.length===1?"it":"them"} onto a spare signer.`,"bad","custody");
 }
 /* The wording the dismiss button needs, or "" when nobody's key is at stake. */
 function custodyDismissNote(roleId){
@@ -177,7 +177,7 @@ function rotateCustodyKey(keyId,deviceUid,rush=false){
   state.wallets.cold=Math.max(0,(state.wallets.cold||0)-fee);
   c.rotation={old:old.id,new:key.id,due:state.time+days*DAY,started:state.time,fee,days,rush:!!rush};
   log(`Rotating ${old.label} to ${key.label}${rush?" (rushed)":""}`,`${days} day${days===1?"":"s"} · ${fmtBtc(fee)} to sweep the coins`,"custody");
-  showToast("Rotation started",`${key.label} is generated and the coins are being swept to the new wallet. It takes ${days} day${days===1?"":"s"} and ${fmtBtc(fee)}. Until it finishes the old key still controls the coins, and signing is paused.`,"info","custody");
+  showToast("Rotation started",`Sweeping to a new key takes ${days} day${days===1?"":"s"} and ${fmtBtc(fee)}. Signing is paused.`,"info","custody");
   save();render();
 }
 /* The signer a retired key was on still holds it, and a signer holding a key cannot be the one a new key is
@@ -201,7 +201,7 @@ function wipeCustodySigner(keyId){
   const device=state.custody.devices.find(d=>d.keyId===keyId&&!d.destroyed),key=custodyKey(keyId);
   device.keyId=null;
   log(`Wiped the signer that held ${key.label}`,"It can hold a new key again","custody");
-  showToast("Signer wiped",`${key.label} is removed from this device, which can now hold a replacement key. Its backup and any other copies still exist: wiping hardware does not erase a secret everywhere it has been copied.`,"success","custody");
+  showToast("Signer wiped",`${key.label} is off this device. Its backups still exist elsewhere.`,"success","custody");
   save();render();
 }
 function advanceRotation(silent=false){
@@ -215,6 +215,6 @@ function advanceRotation(silent=false){
   utxoState().cold=(state.wallets.cold||0)>0?1:0;
   c.rotation=null;
   log(`Rotated to ${fresh?fresh.label:"a new key"}`,`${old?old.label:"The old key"} retired · coins consolidated into one`,"custody");
-  if(!silent)showToast("Rotation complete",`${old?old.label:"The old key"} no longer controls anything. ${custodyPolicy(c.policy).threshold>1?"Record the wallet configuration again, and back the new key up. ":"Back the new key up. "}The funds now use the replacement wallet. Changing who can spend required moving the coins; deleting an old copy alone could not revoke that authority.`,"success","custody");
+  if(!silent)showToast("Rotation complete",`${old?old.label:"The old key"} no longer controls anything. Back the new key up.`,"success","custody");
   renderFullQueued=true;
 }

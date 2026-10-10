@@ -230,6 +230,7 @@ function floor3dAvailable(){
 function floorViewport(){
   const blocked=typeof floor3dUnavailableReason==="function"?floor3dUnavailableReason():"";
   if(blocked)return `<p class="modal-note floor-3d-fallback">${blocked} The flat floor below carries the same information.</p>`;
+  if(typeof roomStageHosts3d==="function"&&roomStageHosts3d())return `<p class="modal-note floor-3d-elsewhere">Your floor is drawn in 3D on the stage beside this panel. Close the panel or open your site there to see it full size.</p>`;
   return `<div class="floor-stage">${typeof floorSmokeHtml==="function"?floorSmokeHtml():""}<div class="floor-3d-mount" role="img" aria-label="Three-dimensional view of the mining floor"></div></div><div class="floor-3d-bar"><p class="floor-3d-readout" data-floor3d-readout>Hover a machine to inspect it. Click a faulted one to open its repair.</p><div class="floor-3d-controls"><button class="action small" data-action="floor3d-zoom" data-value="out" title="Zoom out">&minus;</button><button class="action small" data-action="floor3d-zoom" data-value="in" title="Zoom in">+</button><button class="action small" data-action="floor3d-reset" title="Return to the default vantage" disabled>Reset view</button></div></div>`;
 }
 function miningFloorVisual(){

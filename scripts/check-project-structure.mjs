@@ -101,6 +101,8 @@ const expectedScripts = [
   "src/ui/confetti.js",
   "src/ui/event-modals.js",
   "src/ui/admin-config.js",
+  /* The room shell render() draws; its UI state is read by nav() and the HUD at render time. */
+  "src/ui/room.js",
   "src/ui/render.js",
   /* After render.js, whose ceremony modal it animates; before events.js. */
   "src/ui/dice-shake.js",

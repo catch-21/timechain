@@ -47,6 +47,24 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--orange);outline-off
 .exposure-warning-banner{border-color:#8a6420;background:#241c0d;color:#ffdca8}.exposure-warning-banner span{color:#cfa863}
 .shopping-banner{margin:0 0 12px;border:1px solid #6f5a31;background:#18140c;padding:10px 12px;display:flex;gap:10px;align-items:center;color:#f8d8a4;font:10px var(--mono)}.shopping-banner b{text-transform:uppercase;color:var(--orange2)}.shopping-banner span{color:#baa982}
 .shell{display:grid;grid-template-columns:minmax(0,1fr) 345px;gap:0;flex:1}.main{min-width:0;border-right:1px solid var(--line)}
+/* HUD - the persistent operation strip. Data on the left (plain, typographic), controls on
+   the right (button chrome). It sits under the topbar on every tab, so the few numbers that
+   decide a move are always in view and the rest live one tap away in the popouts. */
+.hud{position:sticky;top:var(--topbar-h);z-index:19;display:flex;align-items:stretch;justify-content:space-between;gap:14px;padding:0 20px;border-bottom:1px solid var(--line);background:rgba(9,13,14,.96);backdrop-filter:blur(12px)}
+.hud-data{display:flex;align-items:stretch;min-width:0;overflow-x:auto}
+.hud-item{flex:0 0 auto;display:flex;flex-direction:column;justify-content:center;min-width:96px;padding:9px 16px 9px 0;margin-right:16px;border-right:1px solid var(--line)}
+.hud-item:last-child{border-right:0;margin-right:0}
+.hud-label{font:10px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.hud-value{margin-top:4px;font:600 15px/1.2 var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+.hud-value.green{color:var(--green)}.hud-value.orange{color:var(--orange2)}.hud-value.red{color:var(--red)}
+.hud-sub{margin-top:3px;font:10px/1.3 var(--sans);color:var(--muted);white-space:nowrap}
+.hud-controls{display:flex;align-items:center;gap:8px;flex:0 0 auto;padding:7px 0}
+.hud-pop{position:fixed;left:0;right:0;top:calc(var(--topbar-h) + var(--hud-h,48px));z-index:30;border-bottom:1px solid var(--line);background:#090d0e;max-height:70vh;overflow:auto;box-shadow:0 18px 40px rgba(0,0,0,.6)}
+.hud-pop .ticker{border-bottom:0}
+.hud-pop-btn[aria-expanded="true"]{background:var(--orange);color:#160d03;border-color:var(--orange)}
+.hud-pop .dashboard-command-grid{padding:16px 20px}
+@media(max-width:900px){.hud{padding:0 12px}.hud-item{min-width:84px;padding-right:10px;margin-right:10px}.hud-controls{flex-wrap:wrap;justify-content:flex-end}}
+@media(max-width:800px){.hud{position:static}.hud-pop{position:static;max-height:none}}
 /* The tab row sits below the sticky topbar rather than inside it, and used to scroll away
    with the page. On a Mine tab that runs to nearly twelve screens that meant the tabs were
    off-screen for most of the page and you had to scroll back to the top to change tab at
@@ -410,7 +428,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--orange);outline-off
 .dice-tally{display:flex;flex-direction:column;gap:4px}.dice-tally b{font:600 13px var(--mono);color:var(--text)}.dice-tally span{color:var(--muted);font:9px var(--mono)}
 /* The ceremony die: press and hold to shake (dice-shake.js moves it), release to tumble and land. Fixed box, so nothing shifts. */.dice-stage{display:flex;justify-content:center;align-items:center;height:156px;margin:14px 0 4px}.die-roller{position:relative;width:132px;height:132px;padding:10px;border:1px solid var(--line);border-radius:22px;background:#0f1617;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;transition:border-color .15s,box-shadow .15s}.die-roller:hover,.die-roller:focus-visible{border-color:var(--orange2);outline:none;box-shadow:0 0 0 3px rgba(242,169,0,.25)}.die-roller.is-shaking,.die-roller.is-held{cursor:grabbing;border-color:var(--orange2);box-shadow:0 0 calc(6px + var(--shake,0)*22px) rgba(242,169,0,calc(.15 + var(--shake,0)*.45))}.die-roller.is-held .die-svg{opacity:.75}.die-roller .die-svg{display:block;width:112px;height:112px;pointer-events:none;will-change:transform}.die-svg rect{fill:#1b2928;stroke:var(--orange2);stroke-width:2}.die-svg circle{fill:#ffe1a1}.die-svg text{fill:#ffe1a1;font:700 44px var(--mono)}.die-roller.is-tumbling .die-svg{animation:die-tumble var(--tumble-ms,900ms) cubic-bezier(.18,.72,.28,1) both}.die-roller.is-flicker .die-svg{animation:die-flicker var(--tumble-ms,320ms) steps(3) both}.die-roller.is-landed .die-svg{animation:die-land .3s ease-out}@keyframes die-tumble{0%{transform:translateY(-16px) rotate(0) scale(.94)}35%{transform:translateY(6px) rotate(calc(var(--spins,1)*200deg)) scale(1.03)}70%{transform:translateY(-4px) rotate(calc(var(--spins,1)*330deg)) scale(.99)}100%{transform:translateY(0) rotate(calc(var(--spins,1)*360deg)) scale(1)}}@keyframes die-flicker{0%{opacity:.35}50%{opacity:.8}100%{opacity:1}}@keyframes die-land{0%{transform:scale(1.08)}100%{transform:scale(1)}}.dice-stage~.dice-tally small{min-height:4.35em}.dice-help{margin:0;text-align:center;color:var(--muted);font:10px var(--mono)}.modal .dice-status{min-height:26px;margin:4px 0 10px;text-align:center;color:var(--orange2);font:700 18px/26px var(--mono)}@media(prefers-reduced-motion:reduce){.die-roller.is-tumbling .die-svg,.die-roller.is-landed .die-svg{animation:die-flicker .3s steps(3) both}}@media(max-width:480px){.dice-stage{height:140px}.die-roller{width:120px;height:120px}.die-roller .die-svg{width:100px;height:100px}}
 .dice-tally small{color:var(--dim);font:9px/1.45 var(--mono);max-width:430px}.oath-card{margin:16px 0;padding:14px;border:1px solid var(--orange);background:#18140d}.oath-card p{font-size:14px;line-height:1.55}.oath-card small{display:block;color:var(--muted);line-height:1.5;margin-top:10px}
-.wallet-visual{margin:20px 0 18px;border:1px solid var(--line);background:#0b1112;overflow:hidden}.wallet-visual svg{display:block;width:100%;height:auto;min-height:138px}.wallet-visual-caption{padding:10px 12px;border-top:1px solid var(--line);color:var(--muted);font-size:10px;line-height:1.45}.wallet-risk-visual{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin:0 0 20px;background:var(--line);border:1px solid var(--line)}.wallet-risk-visual>div{min-height:104px;padding:11px;background:#101718}.wallet-risk-visual span,.wallet-risk-visual b,.wallet-risk-visual small{display:block}.wallet-risk-visual span{color:var(--orange2);font:9px var(--mono);text-transform:uppercase;letter-spacing:.06em}.wallet-risk-visual b{margin:8px 0 5px;font-size:12px}.wallet-risk-visual small{color:var(--muted);font-size:9px;line-height:1.4}@media(max-width:700px){.wallet-visual svg{min-height:180px}.wallet-risk-visual{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.wallet-explainer{display:grid;gap:12px}.wallet-explainer p{margin:0}.wallet-visual{margin:20px 0 18px;border:1px solid var(--line);background:#0b1112;overflow:hidden}.wallet-visual svg{display:block;width:100%;height:auto;min-height:138px}.wallet-visual-caption{padding:10px 12px;border-top:1px solid var(--line);color:var(--muted);font-size:10px;line-height:1.45}.wallet-risk-visual{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin:0 0 20px;background:var(--line);border:1px solid var(--line)}.wallet-risk-visual>div{min-height:104px;padding:11px;background:#101718}.wallet-risk-visual span,.wallet-risk-visual b,.wallet-risk-visual small{display:block}.wallet-risk-visual span{color:var(--orange2);font:9px var(--mono);text-transform:uppercase;letter-spacing:.06em}.wallet-risk-visual b{margin:8px 0 5px;font-size:12px}.wallet-risk-visual small{color:var(--muted);font-size:9px;line-height:1.4}@media(max-width:700px){.wallet-visual svg{min-height:180px}.wallet-risk-visual{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .wallet-key-reveal{margin:14px 0;padding:12px;border:1px solid var(--line);background:#0b1011;color:var(--green);font:12px/1.6 var(--mono);word-break:break-all}
 .action-link{border:0;background:none;color:var(--dim);font:9px var(--mono);cursor:pointer;margin-left:auto;padding:0}.action-link:hover{color:var(--muted)}
 .build-queue-eta{flex:0 0 auto;color:var(--orange2);font:9px var(--mono);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}.build-queue-eta.awaiting{color:var(--red)}
@@ -712,3 +730,224 @@ a.coin{text-decoration:none;cursor:pointer;transition:border-color .12s,backgrou
 .era-chip strong>span{display:inline;margin:0;color:inherit;font:inherit;text-transform:none;letter-spacing:normal}
 .era-chip .era-short{display:none}
 @container (max-width:250px){.era-chip .era-full{display:none}.era-chip .era-short{display:inline}.era-chip strong{font-size:11px}}
+/* THE ROOM. The site's interior is the main screen and the place the game is played from: the
+   floor, an inspector for whatever is clicked on it, a bar of meters beneath it and a toolbelt that
+   opens each tab as a panel beside it. The room is drawn at its art's own size and scaled by
+   fitRoom() in room.js, so these sizes are the art's, not the window's. */
+.shell.room-shell{display:grid;grid-template-columns:minmax(0,1fr);flex:1;align-items:start}
+.room-shell .stage{position:relative;min-width:0;padding:16px 20px 18px}
+.shell.room-shell.drawer-open{grid-template-columns:minmax(330px,38%) minmax(0,1fr)}
+.room-shell.drawer-open .stage{position:sticky;top:calc(var(--topbar-h) + var(--hud-h,0px));max-height:calc(100vh - var(--topbar-h) - var(--hud-h,0px));overflow:auto;padding:14px}
+.room-frame{position:relative;height:calc(340px * var(--room-scale,1));background:#060a0b}
+.room-canvas{position:absolute;left:0;top:0;width:var(--room-w,900px);height:340px;transform:translateX(var(--room-x,0px)) scale(var(--room-scale,1));transform-origin:0 0}
+.room-canvas .facility-floor{height:100%;border-color:#2a3836}
+.room-canvas .floor-miner{cursor:pointer;transition:filter .15s,outline-color .15s}
+.room-canvas .floor-miner:hover{filter:brightness(1.3) drop-shadow(0 0 7px rgba(255,194,103,.45))}
+.room-canvas .floor-miner.picked{outline:2px solid var(--orange);outline-offset:3px}
+.room-canvas .room-add{display:grid;place-items:center;align-content:center;gap:3px;border:1px dashed #8a6a2c;background:rgba(30,24,12,.72);color:var(--orange2);font:600 9px var(--mono);text-transform:uppercase;letter-spacing:.07em;filter:none;opacity:1}
+.room-canvas .room-add .room-icon{width:22px;height:22px}
+.room-canvas .room-add:hover{border-style:solid;background:rgba(48,38,16,.9)}
+.room-canvas .room-add.full{border-color:#4d6b70;color:var(--blue);background:rgba(12,22,26,.75)}
+.room-hot{cursor:pointer}
+.room-cooling:hover .floor-cooling{border-color:var(--orange2)}
+@keyframes room-add-glow{0%,100%{box-shadow:0 0 0 0 rgba(247,147,26,0)}50%{box-shadow:0 0 0 4px rgba(247,147,26,.18)}}
+.room-canvas .room-add:not(.full){animation:room-add-glow 2.6s ease-in-out infinite}
+
+/* The stage in 3D: the land or the room fills it, with its switch, labels and tools laid over. */
+.room-frame.is-3d{height:clamp(380px,calc(100vh - var(--topbar-h) - var(--hud-h,0px) - 214px),900px);overflow:hidden;border:1px solid var(--line);background:#0b161c}
+.room-shell.drawer-open .room-frame.is-3d{height:clamp(260px,48vh,540px)}
+.stage-3d{position:absolute;inset:0;border-radius:0;background:radial-gradient(ellipse at 50% 42%,#183038,#0a141a 75%)}
+.stage-3d .floor-3d-canvas{width:100%;height:100%}
+.stage-loading{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:var(--dim);font:10px/1.5 var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.stage-3d:has(canvas) .stage-loading{display:none}
+.stage-switch{position:absolute;top:12px;right:12px;z-index:6;display:flex;padding:3px;border:1px solid rgba(255,255,255,.12);background:rgba(8,13,15,.86);backdrop-filter:blur(8px)}
+.stage-switch button{display:flex;align-items:center;gap:6px;padding:7px 12px;border:0;background:none;color:var(--muted);font:600 9px var(--mono);text-transform:uppercase;letter-spacing:.07em;cursor:pointer}
+.stage-switch button:hover{color:var(--text)}
+.stage-switch button .room-icon{width:15px;height:15px}
+.stage-switch button.active{background:var(--orange);color:#160d03}
+.stage-readout{position:absolute;left:12px;bottom:12px;z-index:5;max-width:min(540px,58%);margin:0;padding:6px 10px;border:1px solid rgba(255,255,255,.08);background:rgba(8,13,15,.82);color:var(--dim);font:9px/1.5 var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stage-readout.live{color:var(--orange2)}
+.stage-tools{position:absolute;right:12px;bottom:12px;z-index:5;display:flex;align-items:center;gap:4px}
+.stage-tools .action{background:rgba(14,21,22,.9)}
+.stage-tools .action.primary{display:flex;align-items:center;gap:6px;background:var(--orange);color:#160d03;border-color:var(--orange)}
+.stage-tools .room-icon{width:13px;height:13px}
+.is-3d .room-inspector{top:58px;max-height:calc(100% - 72px)}
+.stage-labels{position:absolute;inset:0;z-index:4;overflow:hidden;pointer-events:none}
+.land-label{position:absolute;left:0;top:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:4px 8px 5px;border:1px solid rgba(255,255,255,.14);border-left:2px solid var(--muted);background:rgba(8,14,17,.84);backdrop-filter:blur(6px);color:var(--text);white-space:nowrap;cursor:pointer;pointer-events:auto;transition:opacity .2s,border-color .15s;will-change:transform}
+.land-label::after{content:"";position:absolute;left:var(--lx,50%);bottom:-7px;width:1px;height:6px;background:rgba(255,255,255,.4)}
+.land-label.flip::after{top:-7px;bottom:auto}
+.land-label b{font:600 10px/1.2 var(--sans)}
+.land-label small{font:8px/1.25 var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+.land-label.tier-2 b{font-size:9px}
+.land-label:hover,.land-label.hover{z-index:2;border-color:var(--orange2)}
+.land-label.is-yours{border-left-color:var(--orange);background:rgba(38,26,8,.92)}
+.land-label.is-yours small{color:var(--orange2)}
+.land-label.is-moving{border-left-color:var(--blue)}
+.land-label.is-open{border-left-color:var(--green)}
+.land-label.is-contract{border-left-color:#8fd0e4}
+.land-label.is-prospect{border-left-color:#8a7a5a}
+.land-label.is-soon,.land-label.is-far,.land-label.is-closed{opacity:.8}
+.land-label.off{opacity:0;pointer-events:none}
+
+/* The objective, pinned to the corner of the room. The reasoning opens on Why?. */
+.stage-coach{position:absolute;left:34px;top:30px;z-index:7;width:min(390px,calc(100% - 68px))}
+.stage-coach:has(> [data-opening-stage]:empty){display:none}
+.stage-coach .operator-briefing{display:block;padding:13px 15px 12px;background:rgba(10,14,15,.93);backdrop-filter:blur(8px);box-shadow:0 14px 34px rgba(0,0,0,.5)}
+.stage-coach .briefing-copy h2{margin:5px 0 6px;font-size:17px;line-height:1.25}
+.stage-coach .briefing-copy>p{font-size:12px;line-height:1.5}
+.stage-coach:not(.open) .briefing-recommendation,.stage-coach:not(.open) .briefing-definitions{display:none}
+.stage-coach .briefing-actions{flex-direction:row;align-items:center;justify-content:flex-start;min-width:0;margin-top:12px;gap:14px}
+.stage-coach .briefing-actions .action{padding:7px 13px}
+.coach-toggle{position:absolute;right:12px;top:10px;border:0;background:none;color:var(--orange2);font:600 9px var(--mono);text-transform:uppercase;letter-spacing:.07em;cursor:pointer;padding:4px}
+.coach-toggle:hover{color:var(--text)}
+
+/* The inspector: what clicking something in the room opens. */
+@keyframes room-pop-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.room-inspector{position:absolute;right:14px;top:14px;z-index:8;width:min(360px,calc(100% - 28px));max-height:max(300px,calc(100% - 28px));display:flex;flex-direction:column;border:1px solid #4a5a57;background:rgba(10,14,15,.97);backdrop-filter:blur(10px);box-shadow:0 22px 54px rgba(0,0,0,.62);animation:room-pop-in .16s ease-out}
+.room-inspector header{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.room-inspector header span{font:9px var(--mono);color:var(--orange2);text-transform:uppercase;letter-spacing:.08em}
+.room-inspector h3{margin:3px 0 0;font:600 15px/1.25 var(--sans)}
+.room-x{margin-left:auto;flex:0 0 auto;display:grid;place-items:center;width:28px;height:28px;border:1px solid var(--line);background:none;color:var(--muted);cursor:pointer}
+.room-x:hover{color:var(--text);border-color:#4a5a57}
+.room-x .room-icon{width:14px;height:14px}
+.room-inspector-body{display:grid;gap:10px;padding:12px 14px 14px;overflow:auto}
+.room-row,.room-upgrade{display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px;border:1px solid var(--line);background:#0c1213}
+.room-row .miner-icon,.room-row .cooling-item-icon,.room-upgrade .miner-icon{width:52px;height:38px}
+.room-row-main{min-width:0}
+.room-row-main b{display:block;font:600 12px/1.3 var(--sans)}
+.room-row-main small{display:block;margin-top:3px;font:10px/1.4 var(--mono);color:var(--muted)}
+.room-row-main em{font-style:normal;color:var(--green)}
+.room-upgrade{border-color:#2f4a3a;background:#0d1611}
+.room-upgrade span{display:flex;align-items:center;gap:4px;font:9px var(--mono);color:var(--green);text-transform:uppercase;letter-spacing:.08em}
+.room-upgrade span .room-icon{width:12px;height:12px}
+.room-next{display:grid;gap:4px;padding:10px 11px;border:1px dashed #5a4a2c;background:#14110b}
+.room-next span{font:9px var(--mono);color:var(--orange2);text-transform:uppercase;letter-spacing:.08em}
+.room-next b{font:600 13px var(--sans)}
+.room-next small{font:10px/1.45 var(--mono);color:var(--muted)}
+.room-next em{font:normal 10px var(--mono);color:var(--dim)}
+.room-next .action{justify-self:start;margin-top:6px}
+.room-next.site{border-style:solid;border-color:#3b4a47;background:#0c1213}
+.room-machine{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;align-items:center}
+.room-machine .miner-icon{width:72px;height:52px}
+.room-machine b{display:block;font:600 13px var(--sans)}
+.room-machine small{display:block;margin-top:3px;font:10px/1.45 var(--mono);color:var(--muted)}
+.room-actions{display:flex;flex-wrap:wrap;gap:6px}
+.room-note{margin:0;font:11px/1.55 var(--sans);color:var(--muted)}
+.room-note.warn{color:var(--orange2)}
+.room-meter-row{display:grid;grid-template-columns:1fr auto;gap:5px 10px;align-items:center}
+.room-meter-row span{font:9px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+.room-meter-row b{font:600 11px var(--mono)}
+.room-meter-row i,.room-meter i{grid-column:1/-1;display:block;height:4px;background:#1a2425;position:relative}
+.room-meter-row i::after,.room-meter i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--w);background:var(--green)}
+.room-meter.high i::after{background:var(--orange)}
+.room-inspector .room-more{justify-self:start;margin:2px 0 0;color:var(--orange2);font-size:10px}
+
+/* The bar under the room: where you are, what state it is in, and the meters that open the site. */
+.room-bar{display:flex;flex-wrap:wrap;align-items:stretch;gap:6px;margin-top:10px}
+.room-chip,.room-meter{display:flex;align-items:center;gap:9px;padding:7px 11px;border:1px solid var(--line);background:#0b1112;color:var(--text);text-align:left;cursor:pointer}
+.room-chip:hover,.room-meter:hover{border-color:#4a5a57;background:#101819}
+.room-chip .room-icon{flex:0 0 auto;width:18px;height:18px;color:var(--orange2)}
+.room-chip span{min-width:0}
+.room-chip b{display:block;font:600 11px/1.3 var(--sans)}
+.room-chip small{display:block;font:9px/1.35 var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+.room-temp.cool .room-icon{color:var(--green)}.room-temp.hot .room-icon,.room-temp.critical .room-icon{color:var(--red)}
+.room-status{display:flex;align-items:center;gap:8px;padding:0 8px;font:12px var(--sans);color:var(--muted)}
+.room-status b{font-weight:500}
+.room-status i{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red)}
+@keyframes room-beat{0%,100%{opacity:1}50%{opacity:.45}}
+.room-status.on i{background:var(--green);box-shadow:0 0 8px var(--green);animation:room-beat 2.2s ease-in-out infinite}
+.room-meter{display:grid;grid-template-columns:1fr auto;gap:5px 14px;align-items:center;min-width:136px}
+.room-meter span{font:9px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+.room-meter b{font:600 11px var(--mono)}
+.room-news{margin-left:auto;max-width:330px}
+.room-news b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.room-queue:empty{display:none}
+.room-queue{margin-top:8px}
+.room-queue .build-queue{display:flex;align-items:center;background:#0b1112}
+.room-queue .build-queue .card-head{flex:0 0 auto;min-height:0;padding:0 14px;border-bottom:0;border-right:1px solid var(--line);align-self:stretch}
+.room-queue .build-queue .card-head h2{font:600 9px var(--mono);color:var(--orange2);letter-spacing:.08em;text-transform:uppercase}
+.room-queue .build-queue .card-head .meta{display:none}
+.room-queue .build-queue .card-pad{flex:1;display:flex;flex-wrap:wrap;gap:0 22px;padding:6px 14px}
+.room-queue .incoming-fleet-row{display:flex;align-items:center;gap:12px;padding:4px 0;border:0}
+.room-queue .incoming-fleet-name b{font-size:12px}
+.room-queue .incoming-fleet-name small{font-size:10px}
+
+/* The toolbelt: every tab, plus the two panels that used to sit on the page. */
+.stage .room-dock{position:static;display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:12px;padding:7px;border:1px solid var(--line);background:rgba(9,13,14,.88);overflow:visible;backdrop-filter:none}
+.stage .room-dock .tab{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:70px;padding:9px 8px 8px;border:1px solid transparent;color:var(--muted);font:600 9px var(--mono);letter-spacing:.07em;text-transform:uppercase}
+.stage .room-dock .tab .room-icon{width:20px;height:20px}
+.stage .room-dock .tab:hover{color:var(--text);background:#121a1b;border-color:var(--line)}
+.stage .room-dock .tab.active{color:var(--orange2);background:#17140d;border-color:#6f5a31}
+.room-dock-gap{align-self:stretch;width:1px;margin:4px 6px;background:var(--line)}
+.room-shell.drawer-open .room-dock .tab{min-width:56px;padding:7px 5px 6px;font-size:8px}
+.room-shell.drawer-open .room-dock .tab .room-icon{width:17px;height:17px}
+.room-shell.drawer-open .room-news{margin-left:0;max-width:none;flex:1 1 100%}
+
+/* A tab opens as a panel beside the room, with a heading that stays put while it scrolls. */
+.drawer{min-width:0;min-height:calc(100vh - var(--topbar-h));border-left:1px solid var(--line);background:rgba(8,12,13,.94)}
+.drawer-head{position:sticky;top:calc(var(--topbar-h) + var(--hud-h,0px));z-index:18;display:flex;align-items:center;gap:12px;padding:11px 20px;border-bottom:1px solid var(--line);background:rgba(9,13,14,.97);backdrop-filter:blur(12px)}
+.drawer-head b{display:block;font:600 15px var(--sans)}
+.drawer-head small{display:block;margin-top:2px;font:10px var(--mono);color:var(--dim)}
+.drawer-close{margin-left:auto;display:flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid var(--line);background:#0e1516;color:var(--muted);font:600 9px var(--mono);text-transform:uppercase;letter-spacing:.07em;cursor:pointer}
+.drawer-close:hover{color:var(--text);border-color:#4a5a57}
+.drawer-close .room-icon{width:14px;height:14px}
+.drawer .hero h1{font-size:clamp(22px,2.1vw,32px)}
+.drawer-story .story-head h2{display:none}
+.drawer-story .sidebar{background:none}
+.drawer .section-orientation{position:relative}
+.drawer .section-orientation .orientation-intro{padding:14px 16px;padding-right:118px}
+.drawer .section-orientation:not(.guide-open) .orientation-guide{grid-template-columns:1fr}
+.drawer .section-orientation:not(.guide-open) .orientation-guide>div:not(.orientation-next),.drawer .section-orientation:not(.guide-open)>.metric-row,.drawer .section-orientation:not(.guide-open)>.orientation-principle,.drawer .section-orientation:not(.guide-open)>.context-help{display:none}
+.guide-toggle{position:absolute;right:12px;top:12px;z-index:1;padding:6px 10px;border:1px solid #46504a;background:#0e1516;color:var(--orange2);font:600 9px var(--mono);text-transform:uppercase;letter-spacing:.07em;cursor:pointer}
+.guide-toggle:hover{border-color:var(--orange2)}
+
+/* The game menu: tutorial, saves, settings and feedback, out of the way until asked for. */
+.game-menu-button{display:flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid var(--line);background:#0e1516;color:var(--muted);font:600 9px var(--mono);text-transform:uppercase;letter-spacing:.07em;cursor:pointer}
+.game-menu-button:hover{color:var(--text)}
+.game-menu-button .room-icon{width:15px;height:15px}
+.game-menu-button[aria-expanded="true"]{color:var(--orange2);border-color:#6f5a31}
+.game-menu{position:fixed;right:16px;top:calc(var(--topbar-h) + 6px);z-index:40;width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 100px);overflow:auto;border:1px solid #4a5a57;background:rgba(10,14,15,.98);box-shadow:0 24px 60px rgba(0,0,0,.6);animation:room-pop-in .16s ease-out}
+.game-menu .footer{flex-direction:column;align-items:stretch;gap:12px;padding:16px 18px;border-top:0}
+.game-menu .footer>span{display:block;line-height:1.6}
+.game-menu .footer>span:nth-child(2){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;font-size:0}
+.game-menu .footer>span:nth-child(2)>a,.game-menu .footer>span:nth-child(2)>button{display:block;padding:8px 10px;border:1px solid var(--line);background:#0e1516;color:var(--text);font:11px var(--sans);text-align:left}
+.game-menu .footer>span:nth-child(2)>a:hover,.game-menu .footer>span:nth-child(2)>button:hover{border-color:#4a5a57;background:#131c1d}
+.game-menu .footer>span:nth-child(2)>input{display:none}
+
+/* The topbar keeps its era, cash, clock and speed in view: the save light only speaks up when a
+   save fails, and the menu button drops its label. */
+@media(max-width:1240px){.brand{min-width:0}.save-state:not(.save-failing){display:none}.game-menu-button span{display:none}.game-menu-button{padding:8px}}
+
+/* Work happens on the right, so the tutorial's coach moves over the room on the left. */
+body.drawer-open .tour-card:not(.tour-center){right:auto;left:14px;width:min(400px,calc(38vw - 28px))}
+
+@media(max-width:1000px){
+  .shell.room-shell.drawer-open{grid-template-columns:minmax(0,1fr)}
+  .room-shell.drawer-open .stage{display:none}
+  .drawer{border-left:0}
+  body.drawer-open .tour-card:not(.tour-center){left:auto;right:18px;width:min(410px,calc(100vw - 36px))}
+}
+.room-shop-chip{display:none}
+@media(max-width:800px){
+  .hud{flex-direction:column;gap:0;padding:0}
+  .hud-data{padding:0 12px;border-bottom:1px solid var(--line)}
+  .hud-controls{padding:7px 12px;justify-content:flex-start}
+  .room-shop-chip{display:flex;flex:1 1 100%}
+  .room-frame.is-3d{height:58vh;min-height:300px}
+  .room-frame.is-3d.scale-land{height:clamp(300px,92vw,58vh)}
+  .is-3d .room-inspector{top:auto;max-height:62vh}
+  .stage-readout{display:none}
+  .stage-switch button span{max-width:90px;overflow:hidden;text-overflow:ellipsis}
+  .stage-tools .action.primary span{display:none}
+  .room-shell .stage{padding:10px}
+  .stage-coach{position:static;width:auto;margin-bottom:10px}
+  .room-inspector{position:fixed;left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:62vh;z-index:60}
+  .stage .room-dock{display:flex;flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto}
+  .stage .room-dock .tab{min-width:62px}
+  .room-news{margin-left:0;max-width:none;flex:1 1 100%}
+  .drawer-head{top:var(--topbar-live-h,58px);padding:10px 12px}
+  .drawer .treasury-sections,.drawer .mine-sections{top:calc(var(--topbar-live-h,58px) + var(--tabs-h,49px))}
+  .game-menu-button span{display:none}
+  .game-menu-button{padding:8px}
+  .game-menu{top:calc(var(--topbar-live-h,58px) + 6px);right:8px;width:calc(100vw - 16px)}
+}

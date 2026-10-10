@@ -15,7 +15,7 @@
    The clock keeps running throughout. Nothing here changes a rule. */
 
 const OFFLINE_OPEN_TABS=["dashboard","mine","ledger","method"];
-const OFFLINE_DARK_TICKS=["Illiquid fiat","Custodial BTC","BTC / USD","Network hash","Difficulty","Subsidy","Fees / block","Transactions","Net worth"];
+const OFFLINE_DARK_TICKS=["Illiquid fiat","Custodial BTC","BTC held by others","BTC / USD","Network hash","Difficulty","Subsidy","Fees / block","Transactions","Net worth"];
 const OFFLINE_TAB_COPY={
   pools:["Pools","You cannot reach a pool, and a pool cannot reach you.","Switching payout scheme, threshold or pool all need a connection."],
   treasury:["Treasury","There is no price to look at, no exchange to reach and no network to send a coin on.","Your keys are safe where you left them; nothing can be bought, sold, moved or borrowed against until you are back online."],

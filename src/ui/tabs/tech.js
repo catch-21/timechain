@@ -124,7 +124,7 @@ function techV2(){
         <em>${escapeHtml(st.label)}</em></div>
     </article>`;
   }).join("");
-  return `<div class="grid"><section class="card span-12"><div class="hero"><div><div class="hero-kicker">Operator specialisation</div><h1>Build capability, not instant multipliers.</h1><p>Every skill past a foundation needs the ones it descends from, and the deepest need two - reaching immersion tuning means having done the clocking work in Compute <em>and</em> the liquid cooling in Energy. Points are finite, so the tree is a set of choices about what your operation is for rather than a list to complete.</p></div><div class="hero-stat"><strong>${state.points}</strong><span>unspent skill points</span></div></div></section>
+  return `<div class="grid"><section class="card span-12"><div class="hero"><div><div class="hero-kicker">Operator specialisation</div><h1>Build capability, not instant multipliers.</h1><p>Each skill builds on the ones before it. Points are finite, so choose.</p></div><div class="hero-stat"><strong>${state.points}</strong><span>unspent skill points</span></div></div></section>
     <section class="card span-12 tech-tree-card"><div class="card-head"><h2>Skill tree</h2><div class="meta">${unlocked} / ${SKILLS.length} UNLOCKED · HOVER A NODE FOR DETAIL</div></div>
       <div class="tech-tree-scroll"><div class="tech-tree-lattice" style="--tech-cols:${cols};--tech-rows:${rows}">
         <div class="tech-branch-heads" style="--tech-cols:${cols}">${headers}</div>

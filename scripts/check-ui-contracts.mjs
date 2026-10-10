@@ -1,4 +1,5 @@
 import { readFile, readdir } from "node:fs/promises";
+import fs from "node:fs";
 import vm from "node:vm";
 
 const root = new URL("../", import.meta.url);
@@ -50,13 +51,85 @@ const introContext = {};
 vm.runInNewContext(inline.slice(introStart, introEnd).replace("const INTRO_SLIDES", "var INTRO_SLIDES"), introContext);
 assert(introContext.INTRO_SLIDES.length === 1, "Opening must reach play without a slideshow");
 assert(inline.includes('introDifficulty="medium"') && inline.includes('Customise your run'), "Opening must default to the Standard 2009 start and retain custom starts");
+
+/* COPY DISCIPLINE - the interface states the consequence in one line; the explanation lives
+   one layer down (contextual help, Method). These ceilings hold that line so prose cannot
+   creep back onto the first screen. They count words, not characters, because the contract
+   is about brevity, not typography. A word is any run that carries a letter, digit or money
+   sign, so "0.5" and "$1,500" count once and markup and arrows do not count at all. */
+function copyWords(text) {
+  return String(text).replace(/<[^>]*>/g, " ").split(/\s+/).filter(w => /[A-Za-z0-9$%£¢]/.test(w)).length;
+}
+function copyBudget(label, source, pattern, max, kind) {
+  const matches = [...source.matchAll(pattern)];
+  assert(matches.length > 0, `${label}: the ${kind} surface is missing, so its word budget has nothing to hold`);
+  for (const m of matches) {
+    const words = copyWords(m[1] ?? m[0]);
+    assert(words <= max, `${label}: a ${kind} runs ${words} words, over the ${max}-word budget. Cut the interface line; the explanation belongs one layer down.`);
+  }
+}
+// Toasts: a title and a body that each fit on a glance. The engine's toast copy is the
+// first-hours teacher, so this is the budget a player meets first.
+{
+  const toastFiles = ["src/engine/signing.js", "src/engine/actions.js", "src/engine/settlement.js", "src/engine/pools.js", "src/engine/custody.js", "src/engine/keyholders.js"];
+  let toastBodies = 0, worstToast = { words: 0, file: "" };
+  for (const file of toastFiles) {
+    const source = fs.readFileSync(new URL(file, root), "utf8");
+    // Title and body as separate literals. Each literal runs to its own closing delimiter,
+    // with escaped quotes allowed inside, so a template literal holding a backtick is not
+    // cut short. This reads the same strings the engine passes, not a prefix of them.
+    const literal = String.raw`"((?:[^"\\]|\\.)*)"|` + "`((?:[^`\\\\]|\\\\.)*)`";
+    const toastRe = new RegExp("showToast\\s*\\(\\s*(?:" + literal + ")\\s*,\\s*(?:" + literal + ")", "g");
+    for (const m of source.matchAll(toastRe)) {
+      toastBodies++;
+      const body = m[3] ?? m[4] ?? "";
+      const words = copyWords(body);
+      if (words > worstToast.words) worstToast = { words, file };
+      assert(words <= 15, `Toast in ${file} runs ${words} words: "${m[1] ?? m[2]}". The interface says what happened and what to do in one line; the why lives in the preview or Method.`);
+    }
+  }
+  assert(toastBodies > 0, "No literal toast bodies found to budget");
+}
+// Tab heroes: one sentence of consequence. The hero is the paragraph straight after its h1;
+// the h1 may carry an id, so match the tag loosely and take the first <p> that follows it.
+// A tab with no hero (the Treasury opens on its position strip) has nothing to budget.
+for (const tab of ["mine", "pools", "market", "treasury", "operations", "ledger", "tech"]) {
+  const source = fs.readFileSync(new URL(`src/ui/tabs/${tab}.js`, root), "utf8");
+  const heroBlocks = [...source.matchAll(/<div class="hero">[\s\S]*?<\/h1><p>([\s\S]*?)<\/p>/g)];
+  for (const m of heroBlocks) {
+    const words = copyWords(m[1]);
+    assert(words <= 15, `Tab hero (${tab}) runs ${words} words, over the 15-word budget. One sentence of consequence; the how lives in help.`);
+  }
+}
+// Operator briefing: one line of situation, one of recommended action. Ids and the two
+// stable labels are pinned below; the prose between them is what this budget governs.
+{
+  const briefingSource = fs.readFileSync(new URL("src/ui/tabs/dashboard.js", root), "utf8");
+  copyBudget("Operator briefing copy", briefingSource, /copy:\s*`([^`]+)`/g, 25, "briefing copy");
+  copyBudget("Operator briefing recommendation", briefingSource, /recommendation:\s*(?:"([^"]+)"|`([^`]+)`)/g, 15, "briefing recommendation");
+  assert(briefingSource.includes("Recommended next step") && briefingSource.includes("New to Bitcoin mining? Start with these terms"), "The Operator briefing has lost its recommended-action affordance or its newcomer definitions");
+}
+// Tutorial: a step asks for one thing; its hint names the one control. Step ids, the welcome
+// promise and the ring selectors are pinned elsewhere (the guarantee suite replays them);
+// this budget holds only the prose.
+{
+  const tourSource = fs.readFileSync(new URL("src/ui/tour.js", root), "utf8");
+  copyBudget("Tutorial step body", tourSource, /body:\s*"((?:[^"\\]|\\.)*)"/g, 30, "tutorial step body");
+  copyBudget("Tutorial action hint", tourSource, /hint:\s*`([^`]+)`/g, 20, "tutorial hint");
+}
+// The first screen: one slide, one lead, one purpose line behind its own disclosure.
+{
+  const slide = introContext.INTRO_SLIDES[0];
+  assert(copyWords(slide.lead) <= 15, `Intro lead runs ${copyWords(slide.lead)} words, over 15. The opening states what the run is, not the whole thesis.`);
+  assert(copyWords(slide.body) <= 25, `Intro body runs ${copyWords(slide.body)} words, over 25.`);
+}
 assert(inline.includes('id:"first-work"') && inline.includes('id:"first-month"'), "First month needs work and completion guidance");
 assert(inline.includes('data-action="wallet-demo"'), "Wallet education must remain available after starting");
 assert(inline.includes("guidance:{dismissed:[]}") && inline.includes("state.guidance=Object.assign({dismissed:[]}") && inline.includes('if(a==="dismiss-guidance")'), "Save-compatible Operator briefing dismissals are missing");
 assert(inline.includes("function operatorBriefing()") && inline.includes("Operator briefing ·") && inline.includes("Recommended next step") && inline.includes("New to Bitcoin mining? Start with these terms"), "The state-aware newcomer Operator briefing is incomplete");
 assert(inline.includes('if(state.pendingSettlement)return""') && inline.includes('id:"grid-arrears"') && inline.includes('id:"high-temperature"') && inline.includes('id:"open-faults"') && inline.includes('id:"capacity-pressure"') && inline.includes('id:"first-run"') && inline.includes('id:"first-bill"') && inline.includes('id:"first-upgrade"') && inline.includes('id:"pool-available"') && inline.includes('id:"low-runway"'), "Operator briefing priority states are incomplete");
 assert(inline.includes("A private key lets your wallet create a signature") && inline.includes("Do not use this key for real bitcoin"), "Wallet setup is missing its newcomer purpose or safety explanation");
-assert(inline.includes("GAME_PURPOSE_COPY") && inline.includes("Jump into the market at any point in history") && inline.includes("geopolitics and security"), "The opening no longer explains the simulation's learning purpose and low-cost laptop strategy");
+assert(inline.includes("GAME_PURPOSE_COPY") && inline.includes("Jump into the market at any point in history") && inline.includes("geopolitics and security") && inline.includes("model for learning, not a promise of profit"), "The opening no longer explains the simulation's learning purpose or its model-not-promise framing");
 assert(inline.includes("function accountSecurityCard") && inline.includes('data-action="buy-phone"') && inline.includes('data-action="toggle-account-2fa"') && inline.includes('data-action="upgrade-account-security"') && inline.includes("function phoneSecurity()"), "Phone ownership and exchange/pool 2FA controls are not fully wired");
 assert(inline.includes('data-action="starting-mode"'), "Difficulty controls are missing");
 assert(inline.includes("Starting difficulty"), "Method is missing difficulty documentation");
@@ -1293,7 +1366,7 @@ assert(inline.includes('class="card section-pulse section-orientation"') && inli
 assert(orientationTabs.every(tab=>new RegExp(`(?:^|\\s)${tab}:\\{purpose:`).test(inline)), "One or more non-Dashboard tabs is missing its page purpose and state-aware orientation copy");
 assert(css.includes(".section-orientation{") && css.includes(".orientation-guide{") && css.includes("@media(max-width:700px){.orientation-intro"), "Page orientation is missing its desktop or mobile layout");
 assert(inline.includes("Your machines are mining.") && inline.includes("Self-held BTC") && inline.includes("BTC held by others") && inline.includes("Site power used"), "Dashboard still relies on technical or ambiguous labels instead of the Phase 3 operating language");
-assert(inline.includes("Choose machines that can earn more than they cost to run.") && inline.includes("A pool combines many miners' work") && inline.includes("Your keys decide who can spend your bitcoin.") && inline.includes("Know what today's mining load costs."), "A core operating tab has lost its newcomer-readable Phase 3 entry copy");
+assert(inline.includes("Choose machines that can earn more than they cost to run.") && inline.includes('selected?selected.name:"Solo mining"') && inline.includes("Your keys decide who can spend your bitcoin.") && inline.includes("Know what today's mining load costs."), "A core operating tab has lost its newcomer-readable entry headline");
 assert(inline.includes("const PAGE_HELP={") && orientationTabs.every(tab=>new RegExp(`(?:^|\\s)${tab}:\\{anchor:\"method-`).test(inline)), "One or more operating tabs is missing reusable contextual help or a Method destination");
 assert(inline.includes("function contextualHelp(tab)") && inline.includes("Terms and help") && inline.includes("What do these numbers mean?") && inline.includes("How ${help.label} works in this simulation"), "The expandable contextual-help component is missing its definition or simulation-reference layers");
 assert(inline.includes("function enhanceDisabledControls()") && inline.includes('button.action:disabled') && inline.includes('a==="blocked-help"') && inline.includes("Why this is unavailable"), "Disabled actions do not expose a touch-accessible blocker explanation");

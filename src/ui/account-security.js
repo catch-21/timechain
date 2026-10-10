@@ -1,7 +1,11 @@
 "use strict";
 
-const GAME_PURPOSE_COPY="Jump into the market at any point in history and test how well you could operate with the funds you choose. The game is a model for learning, not a promise of profit: compare miner prices, energy costs, network competition, geopolitics and security over time. A strong early approach is often to keep costs low with a laptop, pause or return later, then use liquid assets and the market instead of carrying a large fleet too soon. Learn how risk management, keys, storage and safe distribution of copies change what your operation can survive.";
-const WALLET_UTXO_COPY="Bitcoin is not a traditional bank account, and it is not one running balance like an account-based system such as Ethereum. Instead, the blockchain keeps a public list of individual spendable pieces called <strong>unspent transaction outputs</strong>, or <strong>UTXOs</strong>. Think of them like separate digital notes: a payment spends one or more notes and creates new notes for the recipient and any change. Your wallet does not hold those coins. It finds the UTXOs assigned to your addresses. A private key lets your wallet create a signature that proves you may spend them; anyone can check that proof without your name, a login or a bank. Do not use this key for real bitcoin.";
+const GAME_PURPOSE_COPY="Jump into the market at any point in history and test how you would have operated. This is a model for learning, not a promise of profit: miner prices, energy, competition, geopolitics and security all change over time. Keep costs low, learn how keys and their backups decide what survives.";
+const WALLET_UTXO_COPY=[
+  "Bitcoin is not a traditional bank account, and it is not one running balance like an account-based system such as Ethereum. Instead, the blockchain keeps a public list of individual spendable pieces called <strong>unspent transaction outputs</strong>, or <strong>UTXOs</strong>.",
+  "Think of them like separate digital notes: a payment spends one or more notes and creates new notes for the recipient and any change. Your wallet does not hold those coins. It finds the UTXOs assigned to your addresses.",
+  "A private key lets your wallet create a signature that proves you may spend them; anyone can check that proof without your name, a login or a bank. Do not use this key for real bitcoin."
+];
 
 function accountSecurityCard(context="market"){
   const p=state.phone||{owned:false,twoFA:{exchange:false,pool:false},upgrade:false},two=p.twoFA||{},label=context==="pools"?"Pool account":"Exchange account";

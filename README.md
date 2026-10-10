@@ -211,6 +211,20 @@ A searchable glossary of 47 canonical terms opens from any contextual-help discl
 
 A blocked action states the plain-language reason, the exact missing amount or prerequisite, and where to resolve it. A consequential action previews what will change, the immediate cost, the delay and ongoing cost, and the risk or reversibility before it is confirmed.
 
+### Layer discipline and word budgets
+
+The interface layer carries one line: what happened or what to decide. The explanation is not deleted; it moves down one layer into contextual help or Method. This is the three-layer model above, enforced. `check-ui-contracts.mjs` holds each surface to a word ceiling, so a tightened line cannot grow back without the check failing:
+
+| Surface | Budget |
+| --- | --- |
+| Toast title / body | 4 / 15 words |
+| Tab hero paragraph | 15 words |
+| Operator briefing copy / recommendation | 25 / 15 words |
+| Tutorial step body / action hint | 30 / 20 words |
+| Intro slide lead / body | 15 / 25 words |
+
+The rule of thumb is Zinsser's: clarity (the first sentence is the consequence), simplicity (one idea per sentence), brevity (the budget), humanity (the operator-coach warmth and the IRC friend stay). The never-cut list still applies: a blocked action keeps its reason, the exact shortfall and the recovery path; a consequential action keeps its cost, delay and risk preview; recorded/derived/modelled stay labelled; losses and insolvency stay humourless.
+
 ### Voice
 
 The interface should sound like an experienced operator coaching the player:
