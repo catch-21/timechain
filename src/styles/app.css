@@ -951,3 +951,21 @@ body.drawer-open .tour-card:not(.tour-center){right:auto;left:14px;width:min(400
   .game-menu-button{padding:8px}
   .game-menu{top:calc(var(--topbar-live-h,58px) + 6px);right:8px;width:calc(100vw - 16px)}
 }
+
+/* Keep the backup instruction and its highlighted control in separate rows. */
+.hot-wallet .risk{font-size:11px;line-height:1.6;text-transform:none;letter-spacing:0}
+.hot-wallet .actions{margin:14px 0 16px}
+.hot-wallet .actions .action{min-height:40px}
+/* Opening actions stay reachable while the player reads the optional context. */
+.onboarding-modal .modal-actions{position:sticky;bottom:-28px;z-index:2;flex-wrap:wrap;padding:14px 0;margin-top:18px;background:#0d1213;border-top:1px solid var(--line)}
+@media(max-width:480px){.onboarding-modal .modal-actions{bottom:-20px}.onboarding-modal .modal-actions>.action{flex:1 1 auto}}
+/* A single-column page needs a full-width coach and room to scroll content above it. */
+@media(max-width:1000px){
+  body.tour-on:not(.tour-modal) #app{padding-bottom:calc(var(--tour-card-h,300px) + 24px)}
+  body.drawer-open .tour-card:not(.tour-center){left:8px;right:8px;bottom:8px;width:auto;max-height:46vh}
+  .tour-actions .tour-do-btn{flex:1 1 100%;min-height:40px}
+}
+
+/* Anchor the help toggle to its own briefing, including in the stacked phone layout. */
+.stage-coach .briefing-copy>.hero-kicker{padding-right:44px}
+@media(max-width:800px){.stage-coach{position:relative;left:auto;top:auto}}

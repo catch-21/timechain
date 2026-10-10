@@ -188,8 +188,8 @@ function tourAssignAction(){
 /* Bank box when a year of its fee is in cash; otherwise the free trusted house, so a move never waits on money. */
 function tourMoveAction(){
   const k=tourBackupsAtMine()[0];if(!k)return null;
-  const to=state.cash>=custodyPlace("bank").fee*12?"bank":"trusted",name=custodyPlace(to).name;
-  return {label:`Send it to ${to==="bank"?"the bank box":"a trusted house"}`,hint:`Move <b>${k.hot?"your online wallet's backup":`key ${k.label}'s backup`}</b> out of the mine: press <b>→ ${name}</b> beside it in <b>Where things are kept</b> (or the other place, if you prefer). ${tourBackupsAtMine().length} still at the mine.`,
+  const to=state.cash>=custodyPlace("bank").fee*12?"bank":"trusted";
+  return {label:`Send it to ${to==="bank"?"the bank box":"a trusted house"}${to==="bank"?` · ${fmtUsd(custodyPlace(to).fee)}/month`:" · free"}`,hint:`Move <b>${k.hot?"your online-wallet backup":`key ${k.label}'s backup`}</b> off-site. ${tourBackupsAtMine().length} still here. ${to==="bank"?"One monthly fee covers all copies.":"The trusted house is free."}`,
     ring:[tourMoveRow,".cold-setup"],run:()=>moveCustodyItem("backup",k.id,to)};
 }
 
@@ -252,7 +252,7 @@ const TOUR_STEPS=[
     done:s=>poolAccount().destination==="cold"||!!(s.tour&&s.tour.payoutKept)},
   {id:"start",finish:true,chapter:"Mining",tab:"mine",target:[tourSpeedButton,".topbar"],title:"Start mining",
     body:"Your laptop is on and mining. More hash earns more often but costs more power. <b>Keep it mining and pay the first bill</b>.",
-    act:()=>({label:"Start the clock · 1×",hint:"Press <b>1×</b> to start the clock. The tutorial ends, and you can replay it from the footer.",ring:[tourSpeedButton,".topbar"],
+    act:()=>({label:"Start the clock · 1×",hint:"Press <b>1×</b> to start the clock. The tutorial ends, and you can replay it from the Game menu.",ring:[tourSpeedButton,".topbar"],
       run:()=>{state.speed=1;state.returnSpeed=1;state.lastReal=Date.now();setTimer()}}),
     done:s=>s.speed>0}
 ];
@@ -434,6 +434,8 @@ function tourRefreshCard(force=false){
   }
   // A decision that opens while the tutorial is up (a bill, a loss, an event) takes the screen; the card comes back when it closes.
   document.body.classList.toggle("tour-modal",!!app.querySelector(".modal-backdrop"));
+  const card=app.querySelector(".tour-card");
+  document.body.style.setProperty("--tour-card-h",`${card?card.getBoundingClientRect().height:0}px`);
   const s=tourStep(),el=s.center||!tourOnTab(s)?null:tourFindTarget(s),had=document.querySelector(".tour-target");
   if(had&&had!==el)had.classList.remove("tour-target");
   if(sig!==tourCardSignature){tourScrolledByPlayer=false;tourCardSignature=sig;tourSettleUntil=Date.now()+4000}
@@ -455,7 +457,7 @@ function tourAfterRender(){
    sheet across the bottom. Left alone if it is already there. */
 function tourBringIntoView(el){
   if(el.closest(".topbar,.mobile-pause-button"))return;
-  const r=el.getBoundingClientRect(),narrow=window.innerWidth<=800,card=document.querySelector(".tour-card");
+  const r=el.getBoundingClientRect(),narrow=window.innerWidth<=1000,card=document.querySelector(".tour-card");
   const floor=narrow&&card?card.getBoundingClientRect().top-24:window.innerHeight-40;
   const ceiling=Math.max(...[".topbar",".hud",".drawer-head",".treasury-sections",".mine-sections",".toast"].map(q=>{const e=document.querySelector(q);if(!e)return 0;const b=e.getBoundingClientRect();return b.bottom>0&&b.top<200?b.bottom:0}),0)+16;
   if(r.top>=ceiling&&Math.min(r.bottom,r.top+120)<=floor)return;
@@ -473,3 +475,6 @@ document.addEventListener("keydown",e=>{
 });
 // A player who scrolls or swipes is looking for themselves; the tutorial stops moving the page for this step.
 ["wheel","touchstart"].forEach(type=>window.addEventListener(type,()=>{if(tourActive())tourScrolledByPlayer=true},{passive:true}));
+
+// Reposition guidance after rotation or a responsive breakpoint change.
+window.addEventListener("resize",()=>{if(tourActive()){tourScrolledByPlayer=false;tourSettleUntil=Date.now()+1000;tourRefreshCard()}});

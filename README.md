@@ -2,7 +2,7 @@
 
 > A game-first history of Bitcoin, from the Genesis Block to today. Start with one computer. Mine, keep your keys safe and stay solvent as the technology, the network and the world change.
 
-**Beta 1.2** · plays in the browser, free, no account · live at https://mja1337.github.io/timechain/
+**Beta 1.4** · plays in the browser, free, no account · live at https://mja1337.github.io/timechain/
 
 ## What you do
 

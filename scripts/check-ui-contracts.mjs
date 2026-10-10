@@ -2250,4 +2250,33 @@ assert(inline.includes("${topbarCashHtml(forecast)}") && inline.includes("refres
 assert(inline.includes('id="topbar-cash-full" class="cash-full">${fmtUsd(state.cash)}') && inline.includes('id="topbar-cash-compact" class="cash-compact">${fmtCompactUsd(state.cash)}'), "The topbar cash readout must show state.cash - the only money purchases and bills draw on - and nothing added to it");
 assert(/\.topbar-cash strong\{[^}]*font-variant-numeric:tabular-nums[^}]*min-width:11ch/.test(css) && /\.topbar-cash\{[^}]*width:152px/.test(css), "The topbar cash figure has lost its tabular, fixed-width box, so a ticking number will shift the topbar");
 assert(/@media\(max-width:800px\)\{\.topbar-cash\{[^}]*\}\.topbar-cash \.cash-full,\.topbar-cash small\{display:none\}\.topbar-cash \.cash-compact\{display:inline\}/.test(css), "On a phone the topbar cash readout must switch to the compact figure");
+// Cancelling a quote repaints the ticket: an exact amount must survive that repaint.
+{
+  const { loadEngine, makeEval } = await import("./engine-harness.mjs");
+  const sb=loadEngine(), ev=makeEval(sb);
+  vm.runInContext(await readFile(new URL("src/ui/presentation.js",root),"utf8"),sb);
+  vm.runInContext(await readFile(new URL("src/ui/tabs/market.js",root),"utf8"),sb);
+  const input={dataset:{tradeMax:"10",tradeKind:"sell"},value:""};
+  const submit={dataset:{}};
+  sb.document.querySelector=selector=>selector.includes("data-trade-input")?input:submit;
+  ev('refreshTradeAmount("venue-mtgox-sell",1)');
+  assert(ev('tradeAmountControl("venue-mtgox-sell","sell",10,20,"Sell")').includes('value="1.00000000"'),"Repainting the trade ticket loses the exact amount");
+  assert(ev('tradeAmountControl("venue-mtgox-sell","sell",0.5,20,"Sell")').includes('value="0.50000000"'),"A remembered trade amount exceeds the remaining balance");
+  ev('state=initialState()');
+  assert(ev('tradeAmountControl("venue-mtgox-sell","sell",10,20,"Sell")').includes('value="2.50000000"'),"A new run inherits another run's exact trade amount");
+}
+// The bill guidance must describe the rules for the player's era, including the recovery route.
+{
+  const { loadEngine, makeEval } = await import("./engine-harness.mjs");
+  const sb = loadEngine(), ev = makeEval(sb);
+  vm.runInContext(await readFile(new URL("src/ui/presentation.js", root), "utf8"), sb);
+  ev("state=initialState();state.cash=0");
+  const early = ev("settlementOutlookVisual()");
+  assert(early.includes("No grace before trading opens") && !early.includes("Up to one month's grace"), "Pre-market bill guidance promises unavailable grace");
+  assert(early.includes('data-value="mine"') && !early.includes('data-value="market"'), "A pre-market shortfall sends the player to a market that does not exist");
+  assert(!early.includes('<strong>No market</strong>'), "The market status hides the actual cash shortfall");
+  ev("state.time=MARKET+DAY");
+  const trading = ev("settlementOutlookVisual()");
+  assert(trading.includes("Up to one month's grace") && trading.includes('data-value="market"'), "After trading opens, bill guidance has lost its market recovery route");
+}
 console.log("UI contracts passed: Mine purchases, difficulty and mobile speed controls, transaction precision, enhancement guards, mempool containment, fleet servicing, repair labour, overdrive, Method coverage, speed-resume safety, the exchange trade-ticket flow, network-hash display parity, bad-event impact effects, timed facility-upgrade risk, mining-floor connectivity/power status, the 100-year procedural sandbox continuation, pool fee display, pool shutdown fail-over, the custody transfer slider, Lightning gating, live market pricing, mempool realism, disabled-control tooltips, the single-venue market redesign, Mine-tab scroll stability, full-refurbishment puzzle consistency, the proactive settlement warning, connectivity ping, the unified incoming-fleet pipeline, proportional fleet-health severity colors, rival operators, milestone moments, the end-of-run recap, cross-run career persistence, the dice-entropy wallet-setup ceremony, the era-accurate wallet-software upgrade path, the resetGame() operator-era crash fix, the real mailing-list learning items, the Dashboard build-queue card, hands-on self-servicing before technicians are hired, the fault-clearing/offline-threshold repair fix, the non-blocking faucet popup, tiered spare parts, the historically-grounded custody/region exposure warnings, free self-serviced labour with real self-damage risk, the four hardware self-help skills, staff dismissal the operator XP/level system, dated pool payout schemes, one drawing per machine, and scroll-anchored, frame-aligned repaints");
